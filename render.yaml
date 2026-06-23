@@ -6,6 +6,11 @@ services:
     name: el-arcade
     runtime: node
     plan: free
+    # Custom domains. Render auto-issues + renews TLS once DNS resolves.
+    # www redirects to the apex automatically.
+    domains:
+      - elarcade.com
+      - www.elarcade.com
     # --include=dev forces devDependencies (vite, typescript) to install even
     # though Render sets NODE_ENV=production, which would otherwise skip them
     # and break the client build.
