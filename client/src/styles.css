@@ -918,6 +918,14 @@ body {
   justify-content: center;
   gap: 18px;
 }
+/* The piles are the focal point — render them a bit larger than hand cards. */
+.uno-center .uno-card {
+  width: clamp(58px, 17vw, 76px);
+  height: clamp(87px, 25.5vw, 114px);
+}
+.uno-center .uno-glyph {
+  font-size: clamp(26px, 8vw, 38px);
+}
 .uno-draw-pile {
   position: relative;
   background: none;
@@ -969,6 +977,7 @@ body {
 .uno-hand-label {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   font-size: 12px;
   color: var(--text-dim);
@@ -992,11 +1001,11 @@ body {
 }
 .uno-hand {
   display: flex;
-  gap: 6px;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  gap: 6px 5px;
+  justify-content: center;
   max-width: 100%;
-  padding: 12px 6px;
-  scroll-snap-type: x proximity;
+  padding: 12px 4px;
 }
 .uno-card-btn {
   background: none;
