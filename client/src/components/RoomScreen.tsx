@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { GAMES, GameOptions } from '../../../shared/protocol.ts';
+import { GAMES, GameId, GameOptions } from '../../../shared/protocol.ts';
 import { useArcade } from '../useArcade.ts';
 import { sfx } from '../sounds.ts';
 import { TicTacToeBoard } from './TicTacToeBoard.tsx';
@@ -7,6 +7,8 @@ import { ConnectFourBoard } from './ConnectFourBoard.tsx';
 import { BattleshipBoard } from './BattleshipBoard.tsx';
 import { UnoBoard } from './UnoBoard.tsx';
 import { MemoryBoard } from './MemoryBoard.tsx';
+import { PigBoard } from './PigBoard.tsx';
+import { DotsBoard } from './DotsBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -29,7 +31,12 @@ export function RoomScreen() {
         progress += b.shots.length;
         hits += b.hits.length;
       }
-    } else if (g?.kind === 'uno' || g?.kind === 'memory') {
+    } else if (
+      g?.kind === 'uno' ||
+      g?.kind === 'memory' ||
+      g?.kind === 'pig' ||
+      g?.kind === 'dots'
+    ) {
       progress = g.moves;
     }
 
@@ -166,6 +173,23 @@ export function RoomScreen() {
           canPlay={!isSpectator}
           onFlip={(index) => arcade.move({ action: 'flip', index })}
         />
+      ) : g && g.kind === 'pig' ? (
+        <PigBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onRoll={() => arcade.move({ action: 'roll' })}
+          onHold={() => arcade.move({ action: 'hold' })}
+        />
+      ) : g && g.kind === 'dots' ? (
+        <DotsBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onEdge={(edge, r, c) => arcade.move({ action: 'edge', edge, r, c })}
+        />
       ) : (
         <div className="board-placeholder">
           <span className="big-icon">{info.icon}</span>
@@ -188,11 +212,14 @@ export function RoomScreen() {
   );
 }
 
-const MEMORY_SIZES: Array<{ key: 'small' | 'medium' | 'large'; label: string; sub: string }> = [
-  { key: 'small', label: 'Small', sub: '4×4 · 8 pairs' },
-  { key: 'medium', label: 'Medium', sub: '4×6 · 12 pairs' },
-  { key: 'large', label: 'Large', sub: '6×6 · 18 pairs' },
-];
+type Size = 'small' | 'medium' | 'large';
+
+/** Games that take a board-size option, with per-size descriptions. */
+const SIZE_INFO: Partial<Record<GameId, Record<Size, string>>> = {
+  memory: { small: '4×4 · 8 pairs', medium: '4×6 · 12 pairs', large: '6×6 · 18 pairs' },
+  dots: { small: '3×3 boxes', medium: '5×4 boxes', large: '6×5 boxes' },
+};
+const SIZE_KEYS: Size[] = ['small', 'medium', 'large'];
 
 /** Lobby shown while a room waits to start: roster + host Start button. */
 function WaitingLobby({
@@ -207,7 +234,8 @@ function WaitingLobby({
   const info = GAMES[room.game];
   const isHost = youId === room.hostId;
   const enough = room.players.length >= info.minPlayers;
-  const [size, setSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const sizeInfo = SIZE_INFO[room.game];
+  const [size, setSize] = useState<Size>('medium');
 
   if (isHost && enough) {
     return (
@@ -218,27 +246,24 @@ function WaitingLobby({
             ? `Start now, or wait for up to ${info.maxPlayers} players.`
             : 'Room is full — start when ready!'}
         </p>
-        {room.game === 'memory' && (
+        {sizeInfo && (
           <div className="size-picker">
             <span className="field-label">Board size</span>
             <div className="size-options">
-              {MEMORY_SIZES.map((s) => (
+              {SIZE_KEYS.map((key) => (
                 <button
-                  key={s.key}
-                  className={`size-btn ${size === s.key ? 'selected' : ''}`}
-                  onClick={() => setSize(s.key)}
+                  key={key}
+                  className={`size-btn ${size === key ? 'selected' : ''}`}
+                  onClick={() => setSize(key)}
                 >
-                  <b>{s.label}</b>
-                  <span>{s.sub}</span>
+                  <b>{key.charAt(0).toUpperCase() + key.slice(1)}</b>
+                  <span>{sizeInfo[key]}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
-        <button
-          className="btn primary big"
-          onClick={() => onStart(room.game === 'memory' ? { size } : undefined)}
-        >
+        <button className="btn primary big" onClick={() => onStart(sizeInfo ? { size } : undefined)}>
           Start game ▶
         </button>
       </>

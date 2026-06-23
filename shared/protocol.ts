@@ -12,7 +12,14 @@ export const AVATARS = [
 ] as const;
 export type Avatar = (typeof AVATARS)[number];
 
-export type GameId = 'ticTacToe' | 'connectFour' | 'battleship' | 'uno' | 'memory';
+export type GameId =
+  | 'ticTacToe'
+  | 'connectFour'
+  | 'battleship'
+  | 'uno'
+  | 'memory'
+  | 'pig'
+  | 'dots';
 
 /** Optional config the host can choose in the lobby before starting. */
 export interface GameOptions {
@@ -67,6 +74,22 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Memory Match',
     tagline: 'Flip cards, find the pairs — 2 to 4 players!',
     icon: '🧠',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  pig: {
+    id: 'pig',
+    name: 'Pig',
+    tagline: 'Push your luck — roll big, don’t bust!',
+    icon: '🎲',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  dots: {
+    id: 'dots',
+    name: 'Dots & Boxes',
+    tagline: 'Claim lines, complete boxes — 2 to 4 players!',
+    icon: '🔳',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -239,13 +262,64 @@ export interface MemoryState {
 
 export type MemoryMove = { action: 'flip'; index: number };
 
+// --- Pig (push-your-luck dice) ---------------------------------------------
+
+export interface PigState {
+  kind: 'pig';
+  seating: string[];
+  turn: string | null;
+  /** Banked totals per player. */
+  scores: Record<string, number>;
+  /** Points accumulated this turn but not yet banked. */
+  turnTotal: number;
+  /** Last die face rolled (1-6), or null. */
+  lastRoll: number | null;
+  /** True when the last roll was a 1 (turn busted). */
+  busted: boolean;
+  target: number;
+  winner: string | null;
+  moves: number;
+}
+
+export type PigMove = { action: 'roll' } | { action: 'hold' };
+
+// --- Dots & Boxes ----------------------------------------------------------
+
+export interface DotsState {
+  kind: 'dots';
+  rows: number; // boxes
+  cols: number;
+  /** Horizontal edges, length (rows+1)*cols, index r*cols + c. */
+  hEdges: boolean[];
+  /** Vertical edges, length rows*(cols+1), index r*(cols+1) + c. */
+  vEdges: boolean[];
+  /** Box owners, length rows*cols, index r*cols + c. */
+  owners: (string | null)[];
+  seating: string[];
+  turn: string | null;
+  scores: Record<string, number>;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type DotsMove = { action: 'edge'; edge: 'h' | 'v'; r: number; c: number };
+
 export type GameState =
   | TicTacToeState
   | ConnectFourState
   | BattleshipState
   | UnoState
-  | MemoryState;
-export type GameMove = TicTacToeMove | ConnectFourMove | BattleshipMove | UnoMove | MemoryMove;
+  | MemoryState
+  | PigState
+  | DotsState;
+export type GameMove =
+  | TicTacToeMove
+  | ConnectFourMove
+  | BattleshipMove
+  | UnoMove
+  | MemoryMove
+  | PigMove
+  | DotsMove;
 
 export interface RoomState {
   code: string;

@@ -1201,6 +1201,190 @@ body {
   background: rgba(25, 230, 255, 0.1);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Pig                                                                      */
+/* ----------------------------------------------------------------------- */
+
+.pig-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.pig-scores {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pig-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  min-width: 80px;
+}
+.pig-score.turn {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 12px rgba(77, 255, 166, 0.4);
+}
+.pig-score.you .pig-score-name {
+  color: var(--neon-pink);
+}
+.pig-score-avatar {
+  font-size: 26px;
+}
+.pig-score-name {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.pig-score-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 18px;
+  color: var(--neon-yellow);
+}
+.pig-target {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+}
+.pig-die {
+  font-size: clamp(90px, 30vw, 130px);
+  line-height: 1;
+  color: var(--neon-cyan);
+  filter: drop-shadow(0 0 16px rgba(25, 230, 255, 0.5));
+  animation: pop 0.18s ease-out;
+}
+.pig-die.busted {
+  filter: drop-shadow(0 0 16px rgba(255, 61, 92, 0.6));
+}
+.pig-turn-total {
+  font-size: 16px;
+  color: var(--text);
+  min-height: 22px;
+}
+.pig-turn-total b {
+  color: var(--neon-yellow);
+  font-size: 20px;
+}
+.pig-bust-text {
+  color: var(--neon-pink);
+  font-weight: 700;
+}
+
+/* ----------------------------------------------------------------------- */
+/* Dots & Boxes                                                             */
+/* ----------------------------------------------------------------------- */
+
+.dots-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.dots-scores {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dots-score {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+}
+.dots-score.turn {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
+}
+.dots-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.dots-score-name {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.dots-score-num {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: var(--neon-yellow);
+}
+.dots-grid {
+  display: grid;
+  justify-content: center;
+  max-width: 100%;
+}
+.dot {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dot::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--neon-purple);
+  box-shadow: 0 0 6px rgba(176, 97, 255, 0.6);
+}
+.edge {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+.edge .line {
+  border-radius: 4px;
+  background: rgba(123, 97, 255, 0.12);
+  transition: background 0.15s ease;
+}
+.edge.h .line {
+  width: 80%;
+  height: 6px;
+}
+.edge.v .line {
+  width: 6px;
+  height: 80%;
+}
+.edge.clickable {
+  cursor: pointer;
+}
+.edge.clickable .line {
+  background: rgba(123, 97, 255, 0.25);
+}
+.edge.clickable:hover .line {
+  background: var(--neon-green);
+  box-shadow: 0 0 8px rgba(77, 255, 166, 0.6);
+}
+.edge.drawn .line {
+  background: var(--neon-cyan);
+  box-shadow: 0 0 8px rgba(25, 230, 255, 0.6);
+}
+.box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(16px, 5vw, 26px);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
 .toast {
   position: fixed;
   left: 50%;

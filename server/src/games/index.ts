@@ -4,6 +4,8 @@ import { applyConnectFourMove, createConnectFour } from './connectFour.js';
 import { applyBattleshipMove, createBattleship, viewBattleship } from './battleship.js';
 import { applyUnoMove, createUno, viewUno } from './uno.js';
 import { applyMemoryMove, createMemory, viewMemory } from './memory.js';
+import { applyPigMove, createPig } from './pig.js';
+import { applyDotsMove, createDots } from './dots.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -48,5 +50,13 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first, options) => createMemory(ids, first, options),
     applyMove: (state, playerId, move) => applyMemoryMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewMemory(state as any, viewerId),
+  },
+  pig: {
+    createState: (ids, first) => createPig(ids, first),
+    applyMove: (state, playerId, move) => applyPigMove(state as any, playerId, move as any),
+  },
+  dots: {
+    createState: (ids, first, options) => createDots(ids, first, options),
+    applyMove: (state, playerId, move) => applyDotsMove(state as any, playerId, move as any),
   },
 };
