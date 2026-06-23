@@ -228,19 +228,43 @@ body {
 /* Avatar picker                                                            */
 /* ----------------------------------------------------------------------- */
 
-.avatar-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
+/* Compact identity: avatar preview + name on one row, avatars in a strip. */
+.identity-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
-@media (max-width: 460px) {
-  .avatar-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
+.identity-row .text-input {
+  flex: 1;
+}
+.avatar-preview {
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  border: 2px solid var(--neon-cyan);
+  border-radius: 14px;
+  background: rgba(25, 230, 255, 0.12);
+  box-shadow: 0 0 14px rgba(25, 230, 255, 0.35);
+}
+.avatar-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
 .avatar-cell {
-  aspect-ratio: 1;
-  font-size: clamp(22px, 7vw, 30px);
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  font-size: 26px;
   background: rgba(10, 1, 24, 0.5);
   border: 2px solid transparent;
   border-radius: 12px;
@@ -248,6 +272,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  scroll-snap-align: center;
 }
 .avatar-cell.selected {
   border-color: var(--neon-cyan);
@@ -611,6 +636,147 @@ body {
 /* ----------------------------------------------------------------------- */
 /* Toast                                                                    */
 /* ----------------------------------------------------------------------- */
+
+/* ----------------------------------------------------------------------- */
+/* Battleship                                                               */
+/* ----------------------------------------------------------------------- */
+
+.bs-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.bs-two {
+  flex-direction: column;
+}
+.bs-status {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--neon-cyan);
+  text-align: center;
+  line-height: 1.6;
+}
+.bs-place-head {
+  text-align: center;
+}
+.bs-grid-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bs-grid-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.bs-grid {
+  display: grid;
+  gap: 3px;
+  width: min(92vw, 360px);
+  padding: 6px;
+  background: rgba(10, 1, 24, 0.5);
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+}
+.bs-grid.aim {
+  border-color: var(--neon-yellow);
+  box-shadow: 0 0 16px rgba(255, 225, 77, 0.3);
+}
+.bs-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(9px, 2.6vw, 15px);
+  background: rgba(25, 230, 255, 0.06);
+  border: 1px solid rgba(123, 97, 255, 0.18);
+  border-radius: 3px;
+  color: #fff;
+  padding: 0;
+  cursor: default;
+}
+.bs-cell.ship {
+  background: linear-gradient(150deg, #8593b8, #545f80);
+  border-color: #aab6d8;
+}
+.bs-cell.ship.sunk {
+  background: linear-gradient(150deg, #6b2740, #3a1626);
+  border-color: #ff3db5;
+}
+.bs-cell.hit {
+  background: radial-gradient(circle, #ff7a4d, #c4161d 75%);
+  border-color: #ff9d4d;
+}
+.bs-cell.hit.sunk {
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+}
+.bs-cell.miss {
+  background: rgba(25, 230, 255, 0.12);
+  color: var(--text-dim);
+}
+.bs-cell.preview {
+  background: rgba(77, 255, 166, 0.45);
+}
+.bs-cell.preview-bad {
+  background: rgba(255, 61, 92, 0.45);
+}
+.bs-grid.interactive .bs-cell.fireable {
+  cursor: crosshair;
+}
+.bs-grid.interactive .bs-cell:not([disabled]) {
+  cursor: pointer;
+}
+.bs-grid.aim .bs-cell.fireable:hover {
+  background: rgba(255, 225, 77, 0.35);
+}
+.bs-fleet-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.bs-chip {
+  font-size: 12px;
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+  color: var(--text-dim);
+  background: rgba(10, 1, 24, 0.4);
+}
+.bs-chip.placed {
+  color: var(--neon-green);
+  border-color: rgba(77, 255, 166, 0.6);
+  opacity: 0.65;
+}
+.bs-chip.active {
+  color: var(--neon-yellow);
+  border-color: var(--neon-yellow);
+  box-shadow: 0 0 10px rgba(255, 225, 77, 0.4);
+}
+.sunk-note {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--neon-yellow);
+  text-align: center;
+  margin: -8px 0 0;
+}
+
+/* Roomier two-up layout on big screens. */
+@media (min-width: 880px) {
+  .bs-two {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .bs-two .bs-grid {
+    width: min(40vw, 360px);
+  }
+}
 
 .toast {
   position: fixed;

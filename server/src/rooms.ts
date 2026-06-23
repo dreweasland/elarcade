@@ -270,13 +270,21 @@ export class RoomManager {
   // -------------------------------------------------------------------------
 
   private broadcast(room: Room): void {
-    const state = this.publicState(room);
-    const payload: ServerMessage = { type: 'roomState', room: state };
-    for (const p of room.players) if (p.ws) this.send(p.ws, payload);
-    for (const s of room.spectators) this.send(s, payload);
+    // Each recipient gets a state redacted for their own eyes — players see
+    // their player id, spectators see the spectator (null) view.
+    for (const p of room.players) {
+      if (p.ws) this.send(p.ws, { type: 'roomState', room: this.publicState(room, p.id) });
+    }
+    if (room.spectators.size > 0) {
+      const spectatorState = this.publicState(room, null);
+      for (const s of room.spectators) this.send(s, { type: 'roomState', room: spectatorState });
+    }
   }
 
-  private publicState(room: Room): RoomState {
+  private publicState(room: Room, viewerId: string | null): RoomState {
+    const mod = GAME_MODULES[room.game];
+    const gameState =
+      room.gameState && mod.viewFor ? mod.viewFor(room.gameState, viewerId) : room.gameState;
     return {
       code: room.code,
       game: room.game,
@@ -291,7 +299,7 @@ export class RoomManager {
       scores: { ...room.scores },
       spectators: room.spectators.size,
       rematchReady: [...room.rematchReady],
-      gameState: room.gameState,
+      gameState,
     };
   }
 

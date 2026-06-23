@@ -61,4 +61,11 @@ export const sfx = {
   lose: () => sequence([[392, 0, 0.16], [311, 0.16, 0.16], [233, 0.32, 0.3]], 'sawtooth'),
   draw: () => sequence([[440, 0, 0.14], [440, 0.18, 0.2]], 'square'),
   error: () => tone(180, 0, 0.18, 'sawtooth', 0.14),
+  // Battleship: a punchy explosion for a hit, a soft blip for a splash/miss.
+  hit: () => {
+    tone(140, 0, 0.22, 'sawtooth', 0.2);
+    tone(90, 0.02, 0.3, 'square', 0.16);
+  },
+  splash: () => tone(320, 0, 0.12, 'sine', 0.12),
+  sunk: () => sequence([[200, 0, 0.16], [150, 0.16, 0.18], [100, 0.34, 0.34]], 'sawtooth'),
 };

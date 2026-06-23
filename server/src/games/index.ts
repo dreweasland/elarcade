@@ -1,6 +1,7 @@
 import { GameId, GameMove, GameState } from '../../../shared/protocol.js';
 import { applyTicTacToeMove, createTicTacToe } from './ticTacToe.js';
 import { applyConnectFourMove, createConnectFour } from './connectFour.js';
+import { applyBattleshipMove, createBattleship, viewBattleship } from './battleship.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -11,6 +12,12 @@ export interface MoveOutcome {
 export interface GameModule {
   createState(playerIds: string[], firstPlayerId: string): GameState;
   applyMove(state: GameState, playerId: string, move: GameMove): MoveOutcome;
+  /**
+   * Optional per-viewer redaction. Games with hidden information (e.g.
+   * Battleship) implement this so each client only receives what it may see.
+   * `viewerId` is null for spectators. Omit for fully-public games.
+   */
+  viewFor?(state: GameState, viewerId: string | null): GameState;
 }
 
 export const GAME_MODULES: Record<GameId, GameModule> = {
@@ -23,5 +30,11 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createConnectFour(ids, first),
     applyMove: (state, playerId, move) =>
       applyConnectFourMove(state as any, playerId, move as any),
+  },
+  battleship: {
+    createState: (ids, first) => createBattleship(ids, first),
+    applyMove: (state, playerId, move) =>
+      applyBattleshipMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewBattleship(state as any, viewerId),
   },
 };

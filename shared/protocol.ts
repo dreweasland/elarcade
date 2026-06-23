@@ -12,7 +12,7 @@ export const AVATARS = [
 ] as const;
 export type Avatar = (typeof AVATARS)[number];
 
-export type GameId = 'ticTacToe' | 'connectFour';
+export type GameId = 'ticTacToe' | 'connectFour' | 'battleship';
 
 export interface GameInfo {
   id: GameId;
@@ -38,6 +38,14 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Connect Four',
     tagline: 'Drop discs, get four in a row!',
     icon: '🔴',
+    minPlayers: 2,
+    maxPlayers: 2,
+  },
+  battleship: {
+    id: 'battleship',
+    name: 'Battleship',
+    tagline: 'Hide your fleet, sink theirs!',
+    icon: '🚢',
     minPlayers: 2,
     maxPlayers: 2,
   },
@@ -87,8 +95,54 @@ export interface ConnectFourState {
   winningLine: number[] | null;
 }
 
-export type GameState = TicTacToeState | ConnectFourState;
-export type GameMove = TicTacToeMove | ConnectFourMove;
+// --- Battleship ------------------------------------------------------------
+
+export const BATTLESHIP_SIZE = 10;
+
+/** The classic fleet: 5 ships, 17 cells total. */
+export const BATTLESHIP_FLEET: Array<{ name: string; size: number }> = [
+  { name: 'Carrier', size: 5 },
+  { name: 'Battleship', size: 4 },
+  { name: 'Cruiser', size: 3 },
+  { name: 'Submarine', size: 3 },
+  { name: 'Destroyer', size: 2 },
+];
+
+export interface BattleshipShip {
+  name: string;
+  size: number;
+  cells: number[]; // board indices the ship occupies
+  sunk: boolean;
+}
+
+export interface BattleshipBoard {
+  /** Ships visible to the viewer (own fleet in full; opponent only once sunk). */
+  ships: BattleshipShip[];
+  /** Every cell that has been fired at on this board. */
+  shots: number[];
+  /** Subset of `shots` that struck a ship (so the UI can mark hits). */
+  hits: number[];
+}
+
+export interface BattleshipState {
+  kind: 'battleship';
+  size: number;
+  /** Ship spec for the placement UI. */
+  fleet: Array<{ name: string; size: number }>;
+  phase: 'placing' | 'firing';
+  /** Player ids who have locked in their placement. */
+  ready: string[];
+  /** Whose turn to fire (firing phase), or null. */
+  turn: string | null;
+  /** Per-player boards, keyed by player id. Opponent ships are redacted. */
+  boards: Record<string, BattleshipBoard>;
+  winner: string | 'draw' | null;
+  /** Last ship sunk this turn, for an announcement. */
+  lastSunk: { by: string; ship: string } | null;
+}
+
+export type GameState = TicTacToeState | ConnectFourState | BattleshipState;
+export type GameMove = TicTacToeMove | ConnectFourMove | BattleshipMove;
 
 export interface RoomState {
   code: string;
@@ -133,6 +187,11 @@ export interface TicTacToeMove {
 export interface ConnectFourMove {
   column: number; // 0..C4_COLS-1
 }
+
+/** Battleship move: place your whole fleet, or fire at a cell. */
+export type BattleshipMove =
+  | { action: 'place'; ships: Array<{ name: string; cells: number[] }> }
+  | { action: 'fire'; cell: number };
 
 // ---------------------------------------------------------------------------
 // Server -> Client messages

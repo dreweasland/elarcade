@@ -43,34 +43,36 @@ export function HomeScreen() {
       <p className="insert-coin">▸ Insert player ◂</p>
 
       <section className="panel identity">
-        <label className="field">
-          <span className="field-label">Your name</span>
+        <div className="identity-row">
+          <div className="avatar-preview" aria-hidden="true">
+            {avatar}
+          </div>
           <input
             className="text-input"
             value={name}
             maxLength={16}
-            placeholder="Type your name"
+            placeholder="Your name"
+            aria-label="Your name"
             onChange={(e) => setName(e.target.value)}
           />
-        </label>
+        </div>
 
-        <div className="field">
-          <span className="field-label">Pick your avatar</span>
-          <div className="avatar-grid">
-            {AVATARS.map((a) => (
-              <button
-                key={a}
-                className={`avatar-cell ${a === avatar ? 'selected' : ''}`}
-                onClick={() => {
-                  setAvatar(a);
-                  sfx.place();
-                }}
-                aria-label={`avatar ${a}`}
-              >
-                {a}
-              </button>
-            ))}
-          </div>
+        <div className="avatar-strip" role="radiogroup" aria-label="Pick your avatar">
+          {AVATARS.map((a) => (
+            <button
+              key={a}
+              role="radio"
+              aria-checked={a === avatar}
+              className={`avatar-cell ${a === avatar ? 'selected' : ''}`}
+              onClick={() => {
+                setAvatar(a);
+                sfx.place();
+              }}
+              aria-label={`avatar ${a}`}
+            >
+              {a}
+            </button>
+          ))}
         </div>
       </section>
 

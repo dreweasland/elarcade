@@ -27,8 +27,6 @@ export function App() {
 
       <main className="stage">{inRoom ? <RoomScreen /> : <HomeScreen />}</main>
 
-      <footer className="footer">Made with ❤️ for Emerson &amp; Leighton</footer>
-
       <ErrorToast message={state.error} onDismiss={() => arcade.dismissError()} />
     </div>
   );

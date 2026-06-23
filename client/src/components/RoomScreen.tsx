@@ -4,21 +4,42 @@ import { useArcade } from '../useArcade.ts';
 import { sfx } from '../sounds.ts';
 import { TicTacToeBoard } from './TicTacToeBoard.tsx';
 import { ConnectFourBoard } from './ConnectFourBoard.tsx';
+import { BattleshipBoard } from './BattleshipBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
   const room = state.room;
-  const prev = useRef({ status: '', filled: 0, hadWinner: false });
+  const prev = useRef({ status: '', progress: 0, hits: 0, hadWinner: false });
 
   // React to game-state transitions with sound effects.
   useEffect(() => {
     if (!room) return;
     const g = room.gameState;
-    const filled = g ? g.board.filter(Boolean).length : 0;
     const winner = g?.winner ?? null;
 
+    // A monotonically increasing count of moves, per game, drives the move sound.
+    let progress = 0;
+    let hits = 0;
+    if (g?.kind === 'ticTacToe' || g?.kind === 'connectFour') {
+      progress = g.board.filter(Boolean).length;
+    } else if (g?.kind === 'battleship') {
+      for (const b of Object.values(g.boards)) {
+        progress += b.shots.length;
+        hits += b.hits.length;
+      }
+    }
+
     if (room.status === 'playing' && prev.current.status !== 'playing') sfx.join();
-    if (filled > prev.current.filled && !winner) sfx.place();
+
+    if (progress > prev.current.progress && !winner) {
+      if (g?.kind === 'battleship') {
+        if (g.lastSunk) sfx.sunk();
+        else if (hits > prev.current.hits) sfx.hit();
+        else sfx.splash();
+      } else {
+        sfx.place();
+      }
+    }
 
     if (winner && !prev.current.hadWinner) {
       if (winner === 'draw') sfx.draw();
@@ -26,7 +47,7 @@ export function RoomScreen() {
       else sfx.lose();
     }
 
-    prev.current = { status: room.status, filled, hadWinner: !!winner };
+    prev.current = { status: room.status, progress, hits, hadWinner: !!winner };
   }, [room, state.youId]);
 
   if (!room) {
@@ -41,6 +62,12 @@ export function RoomScreen() {
   let banner = '';
   if (room.status === 'waiting') {
     banner = 'Waiting for a friend to join…';
+  } else if (room.status === 'playing' && g && g.kind === 'battleship' && g.phase === 'placing') {
+    banner = isSpectator
+      ? 'Fleets are being placed…'
+      : g.ready.includes(state.youId)
+        ? 'Waiting for opponent…'
+        : 'Place your ships!';
   } else if (room.status === 'playing' && g) {
     if (isSpectator) {
       const t = room.players.find((p) => p.id === g.turn);
@@ -56,6 +83,14 @@ export function RoomScreen() {
 
   const youReady = room.rematchReady.includes(state.youId);
 
+  let sunkNote = '';
+  if (g && g.kind === 'battleship' && g.lastSunk && !isSpectator) {
+    sunkNote =
+      g.lastSunk.by === state.youId
+        ? `💥 You sank their ${g.lastSunk.ship}!`
+        : `🌊 Your ${g.lastSunk.ship} was sunk!`;
+  }
+
   return (
     <div className="room-screen">
       <RoomHeader code={room.code} game={info.name} spectators={room.spectators} />
@@ -63,6 +98,7 @@ export function RoomScreen() {
       <Scoreboard room={room} youId={state.youId} />
 
       <p className={`banner ${room.status}`}>{banner}</p>
+      {sunkNote && <p className="sunk-note">{sunkNote}</p>}
 
       {g && g.kind === 'ticTacToe' ? (
         <TicTacToeBoard
@@ -79,6 +115,15 @@ export function RoomScreen() {
           youId={state.youId}
           canPlay={!isSpectator}
           onPlay={(column) => arcade.move({ column })}
+        />
+      ) : g && g.kind === 'battleship' ? (
+        <BattleshipBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onPlace={(ships) => arcade.move({ action: 'place', ships })}
+          onFire={(cell) => arcade.move({ action: 'fire', cell })}
         />
       ) : (
         <div className="board-placeholder">
