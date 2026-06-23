@@ -19,7 +19,8 @@ export type GameId =
   | 'uno'
   | 'memory'
   | 'pig'
-  | 'dots';
+  | 'dots'
+  | 'drawguess';
 
 /** Optional config the host can choose in the lobby before starting. */
 export interface GameOptions {
@@ -90,6 +91,14 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Dots & Boxes',
     tagline: 'Claim lines, complete boxes — 2 to 4 players!',
     icon: '🔳',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  drawguess: {
+    id: 'drawguess',
+    name: 'Draw & Guess',
+    tagline: 'One draws, everyone guesses — 2 to 4 players!',
+    icon: '🎨',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -304,6 +313,45 @@ export interface DotsState {
 
 export type DotsMove = { action: 'edge'; edge: 'h' | 'v'; r: number; c: number };
 
+// --- Draw & Guess ----------------------------------------------------------
+
+/** One drawn polyline. Points are flat [x0,y0,x1,y1,...] normalized 0–1000. */
+export interface DrawStroke {
+  color: string;
+  width: number;
+  points: number[];
+}
+
+export interface DrawChat {
+  id: string;
+  playerId: string;
+  /** 'guess' = a wrong guess (text shown); 'correct' = got it (text hidden); 'system'. */
+  kind: 'guess' | 'correct' | 'system';
+  text: string;
+}
+
+export interface DrawGuessState {
+  kind: 'drawguess';
+  seating: string[];
+  round: number; // 0-based
+  totalRounds: number;
+  drawerId: string;
+  phase: 'drawing' | 'reveal' | 'over';
+  /** The word — redacted to '' for players who shouldn't see it yet. */
+  word: string;
+  wordLength: number;
+  secondsLeft: number;
+  strokes: DrawStroke[];
+  /** Player ids who have guessed correctly this round. */
+  guessed: string[];
+  scores: Record<string, number>;
+  chat: DrawChat[];
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type DrawGuessMove = { action: 'guess'; text: string };
+
 export type GameState =
   | TicTacToeState
   | ConnectFourState
@@ -311,7 +359,8 @@ export type GameState =
   | UnoState
   | MemoryState
   | PigState
-  | DotsState;
+  | DotsState
+  | DrawGuessState;
 export type GameMove =
   | TicTacToeMove
   | ConnectFourMove
@@ -319,7 +368,8 @@ export type GameMove =
   | UnoMove
   | MemoryMove
   | PigMove
-  | DotsMove;
+  | DotsMove
+  | DrawGuessMove;
 
 export interface RoomState {
   code: string;
@@ -354,7 +404,10 @@ export type ClientMessage =
   | { type: 'move'; move: GameMove }
   | { type: 'rematch' }
   | { type: 'startGame'; options?: GameOptions }
-  | { type: 'leaveRoom' };
+  | { type: 'leaveRoom' }
+  // Draw & Guess: lightweight stroke streaming from the current drawer.
+  | { type: 'draw'; segment: DrawStroke }
+  | { type: 'drawClear' };
 
 /** Tic-tac-toe move: place your mark at a board cell. */
 export interface TicTacToeMove {
@@ -379,7 +432,10 @@ export type ServerMessage =
   | { type: 'joined'; code: string; youId: string; token: string; role: 'player' | 'spectator' }
   | { type: 'roomState'; room: RoomState }
   | { type: 'left' }
-  | { type: 'error'; message: string };
+  | { type: 'error'; message: string }
+  // Draw & Guess: relayed stroke from the drawer (not a full state broadcast).
+  | { type: 'drawSegment'; segment: DrawStroke }
+  | { type: 'drawClear' };
 
 // ---------------------------------------------------------------------------
 // Helpers

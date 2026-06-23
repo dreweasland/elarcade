@@ -1,5 +1,7 @@
 import type { WebSocket } from 'ws';
 import {
+  DrawGuessState,
+  DrawStroke,
   GameId,
   GameMove,
   GameOptions,
@@ -10,6 +12,7 @@ import {
   ServerMessage,
 } from '../../shared/protocol.js';
 import { GAME_MODULES } from './games/index.js';
+import { addStroke, clearStrokes } from './games/drawguess.js';
 
 interface PlayerRecord {
   id: string;
@@ -35,6 +38,8 @@ interface Room {
   lastFirstPlayerId: string | null;
   /** Pending room-cleanup timer once everyone has disconnected. */
   emptyTimer: NodeJS.Timeout | null;
+  /** Per-second game clock for real-time games (e.g. Draw & Guess). */
+  gameTimer: NodeJS.Timeout | null;
 }
 
 /** Per-socket bookkeeping so we can find a socket's room/player on any message. */
@@ -76,6 +81,10 @@ export class RoomManager {
         return this.rematch(ws);
       case 'startGame':
         return this.startGame(ws, (msg as any).options);
+      case 'draw':
+        return this.draw(ws, false, (msg as any).segment);
+      case 'drawClear':
+        return this.draw(ws, true);
       case 'leaveRoom':
         return this.leave(ws);
       default:
@@ -123,6 +132,7 @@ export class RoomManager {
       gameState: null,
       lastFirstPlayerId: null,
       emptyTimer: null,
+      gameTimer: null,
     };
     this.rooms.set(code, room);
     this.sockets.set(ws, { roomCode: code, playerId: player.id, spectator: false });
@@ -197,13 +207,64 @@ export class RoomManager {
     if (result.error) return this.send(ws, { type: 'error', message: result.error });
 
     room.gameState = result.state;
-    if (result.state.winner) {
+    this.settleResult(room);
+    this.broadcast(room);
+  }
+
+  /** Apply scoring/finish once when a game declares a winner (from a move or tick). */
+  private settleResult(room: Room): void {
+    const gs = room.gameState;
+    if (gs && gs.winner && room.status === 'playing') {
       room.status = 'finished';
-      if (result.state.winner !== 'draw') {
-        room.scores[result.state.winner] = (room.scores[result.state.winner] ?? 0) + 1;
+      if (gs.winner !== 'draw') {
+        room.scores[gs.winner] = (room.scores[gs.winner] ?? 0) + 1;
+      }
+      this.stopGameTimer(room);
+    }
+  }
+
+  /** Draw & Guess: relay the drawer's strokes to everyone else (no full broadcast). */
+  private draw(ws: WebSocket, clear: boolean, segment?: DrawStroke): void {
+    const { room, meta } = this.context(ws) ?? {};
+    if (!room || !meta || meta.spectator || !room.gameState) return;
+    const gs = room.gameState;
+    if (gs.kind !== 'drawguess') return;
+    if (gs.drawerId !== meta.playerId || gs.phase !== 'drawing') return;
+
+    if (clear) {
+      clearStrokes(gs);
+      this.relayToOthers(room, meta.playerId, { type: 'drawClear' });
+    } else if (segment) {
+      if (addStroke(gs, segment)) {
+        this.relayToOthers(room, meta.playerId, { type: 'drawSegment', segment });
       }
     }
-    this.broadcast(room);
+  }
+
+  private relayToOthers(room: Room, fromId: string, msg: ServerMessage): void {
+    for (const p of room.players) if (p.ws && p.id !== fromId) this.send(p.ws, msg);
+    for (const s of room.spectators) this.send(s, msg);
+  }
+
+  private startGameTimer(room: Room): void {
+    this.stopGameTimer(room);
+    if (!GAME_MODULES[room.game].tick) return;
+    room.gameTimer = setInterval(() => {
+      const mod = GAME_MODULES[room.game];
+      if (!room.gameState || room.status !== 'playing' || !mod.tick) return;
+      const { state, changed } = mod.tick(room.gameState);
+      if (!changed) return;
+      room.gameState = state;
+      this.settleResult(room);
+      this.broadcast(room);
+    }, 1000);
+  }
+
+  private stopGameTimer(room: Room): void {
+    if (room.gameTimer) {
+      clearInterval(room.gameTimer);
+      room.gameTimer = null;
+    }
   }
 
   private rematch(ws: WebSocket): void {
@@ -257,6 +318,7 @@ export class RoomManager {
       if (room.status === 'playing') {
         room.status = 'waiting';
         room.gameState = null;
+        this.stopGameTimer(room);
       }
     }
     this.sockets.delete(ws);
@@ -275,6 +337,7 @@ export class RoomManager {
     room.lastFirstPlayerId = firstPlayerId;
     room.status = 'playing';
     room.rematchReady.clear();
+    this.startGameTimer(room); // no-op for games without a tick
   }
 
   /** Loser of the last round goes first; on a draw or first game, alternate. */
@@ -363,7 +426,10 @@ export class RoomManager {
     const anyConnected = room.players.some((p) => p.ws !== null) || room.spectators.size > 0;
     if (anyConnected) return;
     this.cancelCleanup(room);
-    room.emptyTimer = setTimeout(() => this.rooms.delete(room.code), ROOM_EMPTY_GRACE_MS);
+    room.emptyTimer = setTimeout(() => {
+      this.stopGameTimer(room);
+      this.rooms.delete(room.code);
+    }, ROOM_EMPTY_GRACE_MS);
   }
 
   private cancelCleanup(room: Room): void {

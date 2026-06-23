@@ -1,5 +1,6 @@
 import {
   ClientMessage,
+  DrawStroke,
   GameId,
   GameMove,
   GameOptions,
@@ -7,6 +8,9 @@ import {
   RoomState,
   ServerMessage,
 } from '../../shared/protocol.ts';
+
+/** Live draw events relayed from the current drawer in Draw & Guess. */
+export type DrawEvent = { type: 'segment'; segment: DrawStroke } | { type: 'clear' };
 
 const TOKEN_KEY = 'el-arcade-token';
 
@@ -40,6 +44,7 @@ export class ArcadeConnection {
   private ws: WebSocket | null = null;
   private state: ArcadeState = initialState;
   private listeners = new Set<Listener>();
+  private drawListeners = new Set<(e: DrawEvent) => void>();
   private pending: ClientMessage | null = null; // message to send on next open
   private intentionalClose = false;
   private reconnectAttempts = 0;
@@ -78,6 +83,22 @@ export class ArcadeConnection {
 
   startGame(options?: GameOptions): void {
     this.sendNow({ type: 'startGame', options });
+  }
+
+  // --- Draw & Guess live drawing ---
+
+  sendDraw(segment: DrawStroke): void {
+    this.sendNow({ type: 'draw', segment });
+  }
+
+  sendDrawClear(): void {
+    this.sendNow({ type: 'drawClear' });
+  }
+
+  /** Subscribe to relayed stroke events from the current drawer. */
+  subscribeDraw(fn: (e: DrawEvent) => void): () => void {
+    this.drawListeners.add(fn);
+    return () => this.drawListeners.delete(fn);
   }
 
   leave(): void {
@@ -174,6 +195,12 @@ export class ArcadeConnection {
         break;
       case 'error':
         this.patch({ error: msg.message });
+        break;
+      case 'drawSegment':
+        for (const fn of this.drawListeners) fn({ type: 'segment', segment: msg.segment });
+        break;
+      case 'drawClear':
+        for (const fn of this.drawListeners) fn({ type: 'clear' });
         break;
     }
   }

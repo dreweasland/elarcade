@@ -1385,6 +1385,198 @@ body {
   transition: background 0.2s ease;
 }
 
+/* ----------------------------------------------------------------------- */
+/* Draw & Guess                                                             */
+/* ----------------------------------------------------------------------- */
+
+.dg-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.dg-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.dg-round {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: var(--neon-yellow);
+}
+.dg-timer {
+  font-weight: 700;
+  color: var(--neon-cyan);
+}
+.dg-timer.low {
+  color: var(--neon-pink);
+  animation: blink 1s steps(2, start) infinite;
+}
+.dg-drawer {
+  color: var(--text);
+}
+.dg-wordline {
+  min-height: 26px;
+  text-align: center;
+}
+.dg-word {
+  font-size: 18px;
+  letter-spacing: 1px;
+}
+.dg-word b {
+  color: var(--neon-cyan);
+}
+.dg-word.blanks {
+  font-family: monospace;
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: var(--text-dim);
+}
+.dg-word.reveal b,
+.dg-word.got b {
+  color: var(--neon-green);
+}
+.dg-stage {
+  width: min(94vw, 420px);
+}
+.dg-canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  background: #f7f2ff;
+  border: 2px solid var(--panel-border);
+  border-radius: 14px;
+  touch-action: none;
+  display: block;
+  box-shadow: 0 0 18px rgba(123, 97, 255, 0.25);
+}
+.dg-canvas.drawable {
+  border-color: var(--neon-green);
+  cursor: crosshair;
+}
+.dg-tools {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: min(94vw, 420px);
+}
+.dg-colors {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+.dg-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+.dg-swatch.sel {
+  border-color: #fff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+  transform: scale(1.12);
+}
+.dg-widths {
+  display: flex;
+  gap: 6px;
+}
+.dg-wbtn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 2px solid var(--panel-border);
+  background: rgba(10, 1, 24, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.dg-wbtn.sel {
+  border-color: var(--neon-cyan);
+}
+.dg-wbtn span {
+  background: var(--text);
+  border-radius: 50%;
+  display: block;
+}
+.dg-guess {
+  display: flex;
+  gap: 8px;
+  width: min(94vw, 420px);
+}
+.dg-guess .text-input {
+  flex: 1;
+}
+.dg-got-note {
+  color: var(--neon-green);
+  font-weight: 700;
+  margin: 0;
+}
+.dg-scores {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.dg-score {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+  font-size: 12px;
+}
+.dg-score.drawer {
+  border-color: var(--neon-yellow);
+}
+.dg-score-name {
+  color: var(--text-dim);
+}
+.dg-score-pts {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--neon-yellow);
+}
+.dg-feed {
+  width: min(94vw, 420px);
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: rgba(10, 1, 24, 0.4);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 13px;
+}
+.dg-msg {
+  margin: 0;
+  color: var(--text);
+}
+.dg-msg.correct {
+  color: var(--neon-green);
+  font-weight: 700;
+}
+.dg-msg.system {
+  color: var(--neon-yellow);
+  font-style: italic;
+}
+.dg-msg b {
+  color: var(--neon-cyan);
+}
+
 .toast {
   position: fixed;
   left: 50%;

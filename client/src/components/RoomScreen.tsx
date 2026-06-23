@@ -9,6 +9,7 @@ import { UnoBoard } from './UnoBoard.tsx';
 import { MemoryBoard } from './MemoryBoard.tsx';
 import { PigBoard } from './PigBoard.tsx';
 import { DotsBoard } from './DotsBoard.tsx';
+import { DrawGuessBoard } from './DrawGuessBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -35,7 +36,8 @@ export function RoomScreen() {
       g?.kind === 'uno' ||
       g?.kind === 'memory' ||
       g?.kind === 'pig' ||
-      g?.kind === 'dots'
+      g?.kind === 'dots' ||
+      g?.kind === 'drawguess'
     ) {
       progress = g.moves;
     }
@@ -82,11 +84,14 @@ export function RoomScreen() {
       : g.ready.includes(state.youId)
         ? 'Waiting for opponent…'
         : 'Place your ships!';
+  } else if (room.status === 'playing' && g && g.kind === 'drawguess') {
+    banner = ''; // its own board shows round / timer / drawer
   } else if (room.status === 'playing' && g) {
-    if (!isSpectator && g.turn === state.youId) {
+    const turnId = 'turn' in g ? g.turn : null;
+    if (!isSpectator && turnId === state.youId) {
       banner = 'Your turn!';
     } else {
-      const t = room.players.find((p) => p.id === g.turn);
+      const t = room.players.find((p) => p.id === turnId);
       banner = t ? `${t.avatar} ${t.name}'s turn` : 'Waiting…';
     }
   } else if (room.status === 'finished' && g) {
@@ -189,6 +194,14 @@ export function RoomScreen() {
           youId={state.youId}
           canPlay={!isSpectator}
           onEdge={(edge, r, c) => arcade.move({ action: 'edge', edge, r, c })}
+        />
+      ) : g && g.kind === 'drawguess' ? (
+        <DrawGuessBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onGuess={(text) => arcade.move({ action: 'guess', text })}
         />
       ) : (
         <div className="board-placeholder">

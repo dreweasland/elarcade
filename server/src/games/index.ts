@@ -6,6 +6,7 @@ import { applyUnoMove, createUno, viewUno } from './uno.js';
 import { applyMemoryMove, createMemory, viewMemory } from './memory.js';
 import { applyPigMove, createPig } from './pig.js';
 import { applyDotsMove, createDots } from './dots.js';
+import { applyDrawGuessMove, createDrawGuess, tickDrawGuess, viewDrawGuess } from './drawguess.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -22,6 +23,12 @@ export interface GameModule {
    * `viewerId` is null for spectators. Omit for fully-public games.
    */
   viewFor?(state: GameState, viewerId: string | null): GameState;
+  /**
+   * Optional server-driven clock. The room calls this ~once per second while
+   * the game is live; return changed:true to trigger a broadcast. Used by
+   * real-time games like Draw & Guess (round countdown).
+   */
+  tick?(state: GameState): { state: GameState; changed: boolean };
 }
 
 export const GAME_MODULES: Record<GameId, GameModule> = {
@@ -58,5 +65,11 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
   dots: {
     createState: (ids, first, options) => createDots(ids, first, options),
     applyMove: (state, playerId, move) => applyDotsMove(state as any, playerId, move as any),
+  },
+  drawguess: {
+    createState: (ids, first) => createDrawGuess(ids, first),
+    applyMove: (state, playerId, move) => applyDrawGuessMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewDrawGuess(state as any, viewerId),
+    tick: (state) => tickDrawGuess(state as any),
   },
 };

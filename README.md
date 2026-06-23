@@ -4,7 +4,7 @@ A tiny multiplayer arcade built for **E**merson & **L**eighton. Players join fro
 their own phones, tablets, or laptops using a short room code — no accounts, no
 passwords, just pick a name and an avatar and play.
 
-**Games: Tic-Tac-Toe, Connect Four, Battleship, UNO, Memory Match, Pig & Dots & Boxes.** More cabinets drop in easily.
+**Games: Tic-Tac-Toe, Connect Four, Battleship, UNO, Memory Match, Pig, Dots & Boxes & Draw & Guess.** More cabinets drop in easily.
 
 ## Features
 
