@@ -75,6 +75,10 @@ export class ArcadeConnection {
     this.sendNow({ type: 'rematch' });
   }
 
+  startGame(): void {
+    this.sendNow({ type: 'startGame' });
+  }
+
   leave(): void {
     this.intentionalClose = true;
     this.sendNow({ type: 'leaveRoom' });

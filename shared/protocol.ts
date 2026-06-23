@@ -12,7 +12,7 @@ export const AVATARS = [
 ] as const;
 export type Avatar = (typeof AVATARS)[number];
 
-export type GameId = 'ticTacToe' | 'connectFour' | 'battleship';
+export type GameId = 'ticTacToe' | 'connectFour' | 'battleship' | 'uno';
 
 export interface GameInfo {
   id: GameId;
@@ -48,6 +48,14 @@ export const GAMES: Record<GameId, GameInfo> = {
     icon: '🚢',
     minPlayers: 2,
     maxPlayers: 2,
+  },
+  uno: {
+    id: 'uno',
+    name: 'UNO',
+    tagline: 'Match colors & numbers — 2 to 4 players!',
+    icon: '🎴',
+    minPlayers: 2,
+    maxPlayers: 4,
   },
 };
 
@@ -141,8 +149,57 @@ export interface BattleshipState {
   lastSunk: { by: string; ship: string } | null;
 }
 
-export type GameState = TicTacToeState | ConnectFourState | BattleshipState;
-export type GameMove = TicTacToeMove | ConnectFourMove | BattleshipMove;
+// --- UNO -------------------------------------------------------------------
+
+export type UnoColor = 'red' | 'yellow' | 'green' | 'blue';
+export type UnoCardColor = UnoColor | 'wild' | 'back';
+export type UnoCardKind =
+  | 'number'
+  | 'skip'
+  | 'reverse'
+  | 'draw2'
+  | 'wild'
+  | 'wild4'
+  | 'back';
+
+export interface UnoCard {
+  id: string;
+  color: UnoCardColor;
+  kind: UnoCardKind;
+  value?: number; // 0..9 for number cards
+}
+
+export interface UnoState {
+  kind: 'uno';
+  /** Seating order (player ids). Turn moves through this list by `direction`. */
+  seating: string[];
+  /** Each player's hand. Own hand is real; others are face-down 'back' cards. */
+  hands: Record<string, UnoCard[]>;
+  /** Server-only; redacted to [] on the wire. */
+  drawPile: UnoCard[];
+  drawPileCount: number;
+  /** Discard pile; redacted to just the top card on the wire. Top = last. */
+  discard: UnoCard[];
+  /** Active color (a wild sets this). */
+  topColor: UnoColor;
+  direction: 1 | -1;
+  turn: string | null;
+  /** Set when a player drew a playable card and may play it or pass. */
+  pendingPlay: { player: string; cardId: string } | null;
+  winner: string | 'draw' | null;
+  /** Human-readable description of the last action, for the table log. */
+  lastAction: string | null;
+  /** Monotonic move counter (drives sound + animation). */
+  moves: number;
+}
+
+export type UnoMove =
+  | { action: 'play'; cardId: string; chosenColor?: UnoColor; uno?: boolean }
+  | { action: 'draw' }
+  | { action: 'pass' };
+
+export type GameState = TicTacToeState | ConnectFourState | BattleshipState | UnoState;
+export type GameMove = TicTacToeMove | ConnectFourMove | BattleshipMove | UnoMove;
 
 export interface RoomState {
   code: string;
@@ -176,6 +233,7 @@ export type ClientMessage =
   | { type: 'rejoin'; token: string }
   | { type: 'move'; move: GameMove }
   | { type: 'rematch' }
+  | { type: 'startGame' }
   | { type: 'leaveRoom' };
 
 /** Tic-tac-toe move: place your mark at a board cell. */

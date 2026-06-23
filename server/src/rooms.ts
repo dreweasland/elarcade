@@ -71,6 +71,8 @@ export class RoomManager {
         return this.move(ws, (msg as any).move);
       case 'rematch':
         return this.rematch(ws);
+      case 'startGame':
+        return this.startGame(ws);
       case 'leaveRoom':
         return this.leave(ws);
       default:
@@ -151,8 +153,9 @@ export class RoomManager {
 
     this.send(ws, { type: 'joined', code, youId: player.id, token: player.token, role: 'player' });
 
-    // Auto-start once enough players are seated.
-    if (room.status === 'waiting' && room.players.length >= info.minPlayers) {
+    // Auto-start when the room fills up. Games that allow more than the minimum
+    // (e.g. UNO, 2–4) wait for the host to press Start before that.
+    if (room.status === 'waiting' && room.players.length >= info.maxPlayers) {
       this.startRound(room);
     }
     this.broadcast(room);
@@ -207,6 +210,21 @@ export class RoomManager {
     if (room.players.every((p) => room.rematchReady.has(p.id))) {
       this.startRound(room);
     }
+    this.broadcast(room);
+  }
+
+  private startGame(ws: WebSocket): void {
+    const { room, meta } = this.context(ws) ?? {};
+    if (!room || !meta || meta.spectator) return;
+    if (meta.playerId !== room.hostId) {
+      return this.send(ws, { type: 'error', message: 'Only the host can start.' });
+    }
+    if (room.status !== 'waiting') return;
+    const info = GAMES[room.game];
+    if (room.players.length < info.minPlayers) {
+      return this.send(ws, { type: 'error', message: 'Need at least 2 players.' });
+    }
+    this.startRound(room);
     this.broadcast(room);
   }
 

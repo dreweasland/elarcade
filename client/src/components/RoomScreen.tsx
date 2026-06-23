@@ -5,6 +5,7 @@ import { sfx } from '../sounds.ts';
 import { TicTacToeBoard } from './TicTacToeBoard.tsx';
 import { ConnectFourBoard } from './ConnectFourBoard.tsx';
 import { BattleshipBoard } from './BattleshipBoard.tsx';
+import { UnoBoard } from './UnoBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -27,6 +28,8 @@ export function RoomScreen() {
         progress += b.shots.length;
         hits += b.hits.length;
       }
+    } else if (g?.kind === 'uno') {
+      progress = g.moves;
     }
 
     if (room.status === 'playing' && prev.current.status !== 'playing') sfx.join();
@@ -69,11 +72,11 @@ export function RoomScreen() {
         ? 'Waiting for opponent…'
         : 'Place your ships!';
   } else if (room.status === 'playing' && g) {
-    if (isSpectator) {
-      const t = room.players.find((p) => p.id === g.turn);
-      banner = `${t?.name ?? 'Someone'}'s turn`;
+    if (!isSpectator && g.turn === state.youId) {
+      banner = 'Your turn!';
     } else {
-      banner = g.turn === state.youId ? 'Your turn!' : `${opponentName(room, state.youId)} is thinking…`;
+      const t = room.players.find((p) => p.id === g.turn);
+      banner = t ? `${t.avatar} ${t.name}'s turn` : 'Waiting…';
     }
   } else if (room.status === 'finished' && g) {
     if (g.winner === 'draw') banner = "It's a draw! 🤝";
@@ -91,6 +94,15 @@ export function RoomScreen() {
         : `🌊 Your ${g.lastSunk.ship} was sunk!`;
   }
 
+  // UNO action log — resolve {playerId} tokens to names.
+  let actionNote = '';
+  if (g && g.kind === 'uno' && g.lastAction) {
+    actionNote = g.lastAction.replace(/\{([^}]+)\}/g, (_, id) => {
+      const p = room.players.find((pl) => pl.id === id);
+      return p ? p.name : 'Someone';
+    });
+  }
+
   return (
     <div className="room-screen">
       <RoomHeader code={room.code} game={info.name} spectators={room.spectators} />
@@ -99,6 +111,7 @@ export function RoomScreen() {
 
       <p className={`banner ${room.status}`}>{banner}</p>
       {sunkNote && <p className="sunk-note">{sunkNote}</p>}
+      {actionNote && <p className="action-note">{actionNote}</p>}
 
       {g && g.kind === 'ticTacToe' ? (
         <TicTacToeBoard
@@ -125,10 +138,20 @@ export function RoomScreen() {
           onPlace={(ships) => arcade.move({ action: 'place', ships })}
           onFire={(cell) => arcade.move({ action: 'fire', cell })}
         />
+      ) : g && g.kind === 'uno' ? (
+        <UnoBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onPlay={(cardId, chosenColor, uno) => arcade.move({ action: 'play', cardId, chosenColor, uno })}
+          onDraw={() => arcade.move({ action: 'draw' })}
+          onPass={() => arcade.move({ action: 'pass' })}
+        />
       ) : (
         <div className="board-placeholder">
           <span className="big-icon">{info.icon}</span>
-          <p>Share the code below so a friend can join!</p>
+          <WaitingLobby room={room} youId={state.youId} onStart={() => arcade.startGame()} />
         </div>
       )}
 
@@ -147,11 +170,44 @@ export function RoomScreen() {
   );
 }
 
-function opponentName(
-  room: NonNullable<ReturnType<typeof useArcade>['state']['room']>,
-  youId: string,
-): string {
-  return room.players.find((p) => p.id !== youId)?.name ?? 'Opponent';
+/** Lobby shown while a room waits to start: roster + host Start button. */
+function WaitingLobby({
+  room,
+  youId,
+  onStart,
+}: {
+  room: NonNullable<ReturnType<typeof useArcade>['state']['room']>;
+  youId: string;
+  onStart: () => void;
+}) {
+  const info = GAMES[room.game];
+  const isHost = youId === room.hostId;
+  const enough = room.players.length >= info.minPlayers;
+
+  if (isHost && enough) {
+    return (
+      <>
+        <p>
+          Everyone in?{' '}
+          {room.players.length < info.maxPlayers
+            ? `Start now, or wait for up to ${info.maxPlayers} players.`
+            : 'Room is full — start when ready!'}
+        </p>
+        <button className="btn primary big" onClick={onStart}>
+          Start game ▶
+        </button>
+      </>
+    );
+  }
+  if (!enough) {
+    return (
+      <p>
+        Share the code below so {info.maxPlayers > 2 ? 'friends' : 'a friend'} can join! (
+        {room.players.length}/{info.maxPlayers})
+      </p>
+    );
+  }
+  return <p>Waiting for the host to start…</p>;
 }
 
 function RoomHeader({

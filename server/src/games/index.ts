@@ -2,6 +2,7 @@ import { GameId, GameMove, GameState } from '../../../shared/protocol.js';
 import { applyTicTacToeMove, createTicTacToe } from './ticTacToe.js';
 import { applyConnectFourMove, createConnectFour } from './connectFour.js';
 import { applyBattleshipMove, createBattleship, viewBattleship } from './battleship.js';
+import { applyUnoMove, createUno, viewUno } from './uno.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -36,5 +37,10 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     applyMove: (state, playerId, move) =>
       applyBattleshipMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewBattleship(state as any, viewerId),
+  },
+  uno: {
+    createState: (ids, first) => createUno(ids, first),
+    applyMove: (state, playerId, move) => applyUnoMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewUno(state as any, viewerId),
   },
 };
