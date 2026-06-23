@@ -2,6 +2,7 @@ import type { WebSocket } from 'ws';
 import {
   GameId,
   GameMove,
+  GameOptions,
   GameState,
   GAMES,
   PlayerIdentity,
@@ -27,6 +28,8 @@ interface Room {
   scores: Record<string, number>;
   spectators: Set<WebSocket>;
   rematchReady: Set<string>;
+  /** Host-chosen options for the current/last game (e.g. Memory board size). */
+  options: GameOptions;
   gameState: GameState | null;
   /** Who played first in the most recent round (to alternate fairly). */
   lastFirstPlayerId: string | null;
@@ -72,7 +75,7 @@ export class RoomManager {
       case 'rematch':
         return this.rematch(ws);
       case 'startGame':
-        return this.startGame(ws);
+        return this.startGame(ws, (msg as any).options);
       case 'leaveRoom':
         return this.leave(ws);
       default:
@@ -116,6 +119,7 @@ export class RoomManager {
       scores: { [player.id]: 0 },
       spectators: new Set(),
       rematchReady: new Set(),
+      options: {},
       gameState: null,
       lastFirstPlayerId: null,
       emptyTimer: null,
@@ -153,9 +157,11 @@ export class RoomManager {
 
     this.send(ws, { type: 'joined', code, youId: player.id, token: player.token, role: 'player' });
 
-    // Auto-start when the room fills up. Games that allow more than the minimum
-    // (e.g. UNO, 2–4) wait for the host to press Start before that.
-    if (room.status === 'waiting' && room.players.length >= info.maxPlayers) {
+    // Fixed-roster games (exactly N players, like the 2-player games) auto-start
+    // when full. Variable-roster games (UNO, Memory) always wait for the host so
+    // they can choose when to begin and pick options.
+    const fixedRoster = info.minPlayers === info.maxPlayers;
+    if (room.status === 'waiting' && fixedRoster && room.players.length >= info.maxPlayers) {
       this.startRound(room);
     }
     this.broadcast(room);
@@ -213,7 +219,7 @@ export class RoomManager {
     this.broadcast(room);
   }
 
-  private startGame(ws: WebSocket): void {
+  private startGame(ws: WebSocket, options?: GameOptions): void {
     const { room, meta } = this.context(ws) ?? {};
     if (!room || !meta || meta.spectator) return;
     if (meta.playerId !== room.hostId) {
@@ -223,6 +229,9 @@ export class RoomManager {
     const info = GAMES[room.game];
     if (room.players.length < info.minPlayers) {
       return this.send(ws, { type: 'error', message: 'Need at least 2 players.' });
+    }
+    if (options && (options.size === 'small' || options.size === 'medium' || options.size === 'large')) {
+      room.options = { size: options.size };
     }
     this.startRound(room);
     this.broadcast(room);
@@ -262,7 +271,7 @@ export class RoomManager {
   private startRound(room: Room): void {
     const ids = room.players.map((p) => p.id);
     const firstPlayerId = this.pickFirstPlayer(room);
-    room.gameState = GAME_MODULES[room.game].createState(ids, firstPlayerId);
+    room.gameState = GAME_MODULES[room.game].createState(ids, firstPlayerId, room.options);
     room.lastFirstPlayerId = firstPlayerId;
     room.status = 'playing';
     room.rematchReady.clear();

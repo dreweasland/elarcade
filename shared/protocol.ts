@@ -12,7 +12,12 @@ export const AVATARS = [
 ] as const;
 export type Avatar = (typeof AVATARS)[number];
 
-export type GameId = 'ticTacToe' | 'connectFour' | 'battleship' | 'uno';
+export type GameId = 'ticTacToe' | 'connectFour' | 'battleship' | 'uno' | 'memory';
+
+/** Optional config the host can choose in the lobby before starting. */
+export interface GameOptions {
+  size?: 'small' | 'medium' | 'large';
+}
 
 export interface GameInfo {
   id: GameId;
@@ -54,6 +59,14 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'UNO',
     tagline: 'Match colors & numbers — 2 to 4 players!',
     icon: '🎴',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  memory: {
+    id: 'memory',
+    name: 'Memory Match',
+    tagline: 'Flip cards, find the pairs — 2 to 4 players!',
+    icon: '🧠',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -198,8 +211,41 @@ export type UnoMove =
   | { action: 'draw' }
   | { action: 'pass' };
 
-export type GameState = TicTacToeState | ConnectFourState | BattleshipState | UnoState;
-export type GameMove = TicTacToeMove | ConnectFourMove | BattleshipMove | UnoMove;
+// --- Memory Match ----------------------------------------------------------
+
+export interface MemoryCard {
+  id: string;
+  /** Emoji face. Empty string when face-down (redacted on the wire). */
+  face: string;
+  /** Player id who claimed this card as part of a matched pair, or null. */
+  matchedBy: string | null;
+}
+
+export interface MemoryState {
+  kind: 'memory';
+  rows: number;
+  cols: number;
+  cards: MemoryCard[];
+  /** Indices currently face-up this turn (0, 1, or a leftover mismatched 2). */
+  flipped: number[];
+  seating: string[];
+  turn: string | null;
+  /** Pairs collected per player this game. */
+  scores: Record<string, number>;
+  winner: string | 'draw' | null;
+  lastResult: 'match' | 'miss' | null;
+  moves: number;
+}
+
+export type MemoryMove = { action: 'flip'; index: number };
+
+export type GameState =
+  | TicTacToeState
+  | ConnectFourState
+  | BattleshipState
+  | UnoState
+  | MemoryState;
+export type GameMove = TicTacToeMove | ConnectFourMove | BattleshipMove | UnoMove | MemoryMove;
 
 export interface RoomState {
   code: string;
@@ -233,7 +279,7 @@ export type ClientMessage =
   | { type: 'rejoin'; token: string }
   | { type: 'move'; move: GameMove }
   | { type: 'rematch' }
-  | { type: 'startGame' }
+  | { type: 'startGame'; options?: GameOptions }
   | { type: 'leaveRoom' };
 
 /** Tic-tac-toe move: place your mark at a board cell. */

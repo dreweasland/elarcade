@@ -1,8 +1,9 @@
-import { GameId, GameMove, GameState } from '../../../shared/protocol.js';
+import { GameId, GameMove, GameOptions, GameState } from '../../../shared/protocol.js';
 import { applyTicTacToeMove, createTicTacToe } from './ticTacToe.js';
 import { applyConnectFourMove, createConnectFour } from './connectFour.js';
 import { applyBattleshipMove, createBattleship, viewBattleship } from './battleship.js';
 import { applyUnoMove, createUno, viewUno } from './uno.js';
+import { applyMemoryMove, createMemory, viewMemory } from './memory.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -11,7 +12,7 @@ export interface MoveOutcome {
 
 /** Common shape every game in the arcade implements. */
 export interface GameModule {
-  createState(playerIds: string[], firstPlayerId: string): GameState;
+  createState(playerIds: string[], firstPlayerId: string, options?: GameOptions): GameState;
   applyMove(state: GameState, playerId: string, move: GameMove): MoveOutcome;
   /**
    * Optional per-viewer redaction. Games with hidden information (e.g.
@@ -42,5 +43,10 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createUno(ids, first),
     applyMove: (state, playerId, move) => applyUnoMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewUno(state as any, viewerId),
+  },
+  memory: {
+    createState: (ids, first, options) => createMemory(ids, first, options),
+    applyMove: (state, playerId, move) => applyMemoryMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewMemory(state as any, viewerId),
   },
 };

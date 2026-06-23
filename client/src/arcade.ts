@@ -2,6 +2,7 @@ import {
   ClientMessage,
   GameId,
   GameMove,
+  GameOptions,
   PlayerIdentity,
   RoomState,
   ServerMessage,
@@ -75,8 +76,8 @@ export class ArcadeConnection {
     this.sendNow({ type: 'rematch' });
   }
 
-  startGame(): void {
-    this.sendNow({ type: 'startGame' });
+  startGame(options?: GameOptions): void {
+    this.sendNow({ type: 'startGame', options });
   }
 
   leave(): void {

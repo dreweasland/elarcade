@@ -1066,6 +1066,141 @@ body {
   min-height: 16px;
 }
 
+/* ----------------------------------------------------------------------- */
+/* Memory Match                                                             */
+/* ----------------------------------------------------------------------- */
+
+.mem-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+}
+.mem-scores {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.mem-score {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+}
+.mem-score.turn {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 12px rgba(77, 255, 166, 0.4);
+}
+.mem-score.you .mem-score-name {
+  color: var(--neon-pink);
+}
+.mem-score-avatar {
+  font-size: 22px;
+}
+.mem-score-name {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.mem-score-pairs {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: var(--neon-yellow);
+}
+
+.mem-grid {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: 460px;
+}
+.mem-card {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 10px;
+  border: 2px solid var(--panel-border);
+  background: linear-gradient(150deg, rgba(123, 97, 255, 0.4), rgba(25, 230, 255, 0.18));
+  font-size: clamp(24px, 7.5vw, 40px);
+  cursor: default;
+  transition: transform 0.08s ease, border-color 0.2s ease;
+}
+.mem-card.flippable {
+  cursor: pointer;
+  border-color: rgba(77, 255, 166, 0.55);
+  box-shadow: inset 0 0 10px rgba(77, 255, 166, 0.16);
+}
+.mem-card.flippable:active {
+  transform: scale(0.94);
+}
+.mem-card.up {
+  background: rgba(10, 1, 24, 0.75);
+  border-color: var(--neon-cyan);
+}
+.mem-card.matched {
+  border-color: var(--neon-green);
+  opacity: 0.8;
+}
+.mem-q {
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 800;
+  font-size: clamp(20px, 6vw, 30px);
+}
+.mem-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pop 0.2s ease-out;
+}
+.mem-owner {
+  position: absolute;
+  bottom: 2px;
+  right: 3px;
+  font-size: 13px;
+}
+
+/* Lobby board-size picker */
+.size-picker {
+  margin: 10px 0 4px;
+}
+.size-options {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 6px;
+}
+.size-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--panel-border);
+  background: rgba(10, 1, 24, 0.4);
+  color: var(--text);
+  cursor: pointer;
+}
+.size-btn b {
+  font-size: 14px;
+}
+.size-btn span {
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.size-btn.selected {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 12px rgba(25, 230, 255, 0.4);
+  background: rgba(25, 230, 255, 0.1);
+}
+
 .toast {
   position: fixed;
   left: 50%;
