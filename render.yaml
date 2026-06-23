@@ -1,0 +1,17 @@
+# One-click deploy config for Render (https://render.com).
+# Creates a single free web service that builds the client and runs the
+# Node server (which serves the built client + the WebSocket at /ws).
+services:
+  - type: web
+    name: el-arcade
+    runtime: node
+    plan: free
+    # --include=dev forces devDependencies (vite, typescript) to install even
+    # though Render sets NODE_ENV=production, which would otherwise skip them
+    # and break the client build.
+    buildCommand: npm install --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: '22'

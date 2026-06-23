@@ -1,0 +1,33 @@
+{
+  "name": "el-arcade",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "EL Arcade - simple multiplayer games for Emerson & Leighton",
+  "workspaces": [
+    "client"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,client -c magenta,cyan \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "tsx watch server/src/index.ts",
+    "dev:client": "npm --workspace client run dev",
+    "build": "npm --workspace client run build",
+    "start": "tsx server/src/index.ts",
+    "typecheck": "tsc -p server/tsconfig.json --noEmit && npm --workspace client run typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.25",
+    "@types/node": "^22.20.0",
+    "@types/ws": "^8.18.1",
+    "concurrently": "^9.1.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "tsx": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}
