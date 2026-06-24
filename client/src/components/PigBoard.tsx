@@ -1,5 +1,5 @@
 import { PigState, PublicPlayer } from '../../../shared/protocol.ts';
-import { RollingDie } from './RollingDie.tsx';
+import { RollingDie, useDiceReveal } from './RollingDie.tsx';
 
 export function PigBoard({
   game,
@@ -19,6 +19,7 @@ export function PigBoard({
   const myTurn = canPlay && game.turn === youId && !game.winner;
   const playerById = (id: string) => players.find((p) => p.id === id);
   const dieCount = game.lastRoll?.length ?? game.diceCount;
+  const rolling = useDiceReveal(game.lastRoll ? String(game.moves) : null);
 
   return (
     <div className="pig-table">
@@ -39,23 +40,21 @@ export function PigBoard({
         {game.diceCount === 2 && ' · 2 dice — double 1s wipe your score!'}
       </p>
 
-      <div className={`pig-dice ${game.busted ? 'busted' : ''} ${game.wipedOut ? 'wiped' : ''}`}>
-        {game.wipedOut ? (
-          <span className="pig-die">💀</span>
-        ) : (
-          Array.from({ length: dieCount }, (_, i) => (
-            <RollingDie
-              key={i}
-              className="pig-die"
-              value={game.lastRoll ? game.lastRoll[i] : null}
-              rollKey={`${game.moves}-${i}`}
-            />
-          ))
-        )}
+      <div className={`pig-dice ${!rolling && game.busted ? 'busted' : ''} ${!rolling && game.wipedOut ? 'wiped' : ''}`}>
+        {Array.from({ length: dieCount }, (_, i) => (
+          <RollingDie
+            key={i}
+            className="pig-die"
+            value={game.lastRoll ? game.lastRoll[i] : null}
+            rollKey={`${game.moves}-${i}`}
+          />
+        ))}
       </div>
 
       <div className="pig-turn-total">
-        {game.wipedOut ? (
+        {rolling ? (
+          <span className="pig-rolling">Rolling…</span>
+        ) : game.wipedOut ? (
           <span className="pig-bust-text">💀 Snake eyes! Whole score wiped!</span>
         ) : game.busted ? (
           <span className="pig-bust-text">Busted! Rolled a 1 — turn lost</span>

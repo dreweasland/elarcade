@@ -1,5 +1,5 @@
 import { CantStopState, PublicPlayer } from '../../../shared/protocol.ts';
-import { RollingDie } from './RollingDie.tsx';
+import { RollingDie, useDiceReveal } from './RollingDie.tsx';
 
 const SEAT_COLORS = ['#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d'];
 const COLUMNS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -30,6 +30,7 @@ export function CantStopBoard({
   const myTurn = canPlay && game.turn === youId && !game.winner;
   const colorOf = (id: string) => SEAT_COLORS[game.seating.indexOf(id) % SEAT_COLORS.length];
   const hasRunners = Object.keys(game.runners).length > 0;
+  const rolling = useDiceReveal(game.dice ? game.dice.join(',') : null);
 
   return (
     <div className="cs-table">
@@ -90,11 +91,15 @@ export function CantStopBoard({
         </div>
       )}
 
-      {game.busted && <p className="pig-bust-text">💥 Busted! No legal move — turn lost.</p>}
+      {!rolling && game.busted && (
+        <p className="pig-bust-text">💥 Busted! No legal move — turn lost.</p>
+      )}
 
       {canPlay && myTurn && (
         <>
-          {game.phase === 'choosing' && game.options ? (
+          {rolling ? (
+            <p className="cs-prompt">🎲 Rolling…</p>
+          ) : game.phase === 'choosing' && game.options ? (
             <div className="cs-options">
               <span className="cs-prompt">Pick your advance:</span>
               {game.options.map((o, i) => (

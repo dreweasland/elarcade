@@ -1,8 +1,34 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-const ROLL_MS = 560;
+export const ROLL_MS = 560;
 const TICK_MS = 70;
+
+/**
+ * Returns true while the dice are tumbling, so callers can hold the outcome
+ * (e.g. "Busted!") until the dice settle. `rollSig` must change on each new
+ * roll and be null when no dice are in play.
+ */
+export function useDiceReveal(rollSig: string | null, durationMs = ROLL_MS + 80): boolean {
+  const [revealing, setRevealing] = useState(false);
+  const prev = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (prev.current === undefined) {
+      prev.current = rollSig; // first mount — don't reveal
+      return;
+    }
+    if (rollSig === prev.current) return;
+    prev.current = rollSig;
+    if (rollSig == null) {
+      setRevealing(false);
+      return;
+    }
+    setRevealing(true);
+    const t = setTimeout(() => setRevealing(false), durationMs);
+    return () => clearTimeout(t);
+  }, [rollSig]);
+  return revealing;
+}
 
 /**
  * A numeric die (1-6) that tumbles through random faces before settling on

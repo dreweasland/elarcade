@@ -1305,6 +1305,10 @@ body {
   color: var(--neon-pink);
   font-weight: 700;
 }
+.pig-rolling {
+  color: var(--text-dim);
+  font-style: italic;
+}
 
 /* ----------------------------------------------------------------------- */
 /* Dots & Boxes                                                             */

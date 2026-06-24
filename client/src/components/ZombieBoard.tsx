@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PublicPlayer, ZombieDie, ZombieState } from '../../../shared/protocol.ts';
+import { useDiceReveal } from './RollingDie.tsx';
 
 const FACE: Record<ZombieDie['face'], string> = { brain: '🧠', foot: '👣', shotgun: '💥' };
 const FACES: ZombieDie['face'][] = ['brain', 'foot', 'shotgun'];
@@ -41,6 +42,7 @@ export function ZombieBoard({
 }) {
   const myTurn = canPlay && game.turn === youId && !game.winner;
   const playerById = (id: string) => players.find((p) => p.id === id);
+  const rolling = useDiceReveal(game.rolled ? String(game.moves) : null, 600);
 
   return (
     <div className="zd-table">
@@ -59,13 +61,19 @@ export function ZombieBoard({
       <p className="zd-target">First to {game.target} brains wins</p>
 
       <div className="zd-status">
-        <span>
-          🧠 Brains <b>{game.brains}</b>
-        </span>
-        <span className={game.shotguns >= 2 ? 'danger' : ''}>
-          💥 Shotguns <b>{game.shotguns}</b>/3
-        </span>
-        <span>🎲 Cup {game.cupCount}</span>
+        {rolling ? (
+          <span className="zd-dim">🎲 Rolling…</span>
+        ) : (
+          <>
+            <span>
+              🧠 Brains <b>{game.brains}</b>
+            </span>
+            <span className={game.shotguns >= 2 ? 'danger' : ''}>
+              💥 Shotguns <b>{game.shotguns}</b>/3
+            </span>
+            <span>🎲 Cup {game.cupCount}</span>
+          </>
+        )}
       </div>
 
       <div className="zd-rolled">
@@ -83,7 +91,7 @@ export function ZombieBoard({
       </div>
 
       <div className="zd-note">
-        {game.busted ? (
+        {rolling ? null : game.busted ? (
           <span className="pig-bust-text">💥💥💥 Blasted! Three shotguns — turn lost!</span>
         ) : game.kept.length > 0 ? (
           <span>
