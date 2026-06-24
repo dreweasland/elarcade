@@ -1749,6 +1749,20 @@ body {
 .ch-tokens .me {
   filter: drop-shadow(0 0 3px var(--neon-cyan));
 }
+.ch-tokens .hop {
+  animation: chhop 0.22s ease;
+  filter: drop-shadow(0 0 5px var(--neon-yellow));
+  position: relative;
+  z-index: 2;
+}
+@keyframes chhop {
+  0% {
+    transform: translateY(-45%) scale(1.25);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
 .ch-start {
   font-size: 13px;
   color: var(--text-dim);

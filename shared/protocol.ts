@@ -378,9 +378,11 @@ export interface ChutesState {
   turn: string | null;
   positions: Record<string, number>; // 0..100
   lastRoll: number | null;
-  /** Square the mover started on this turn (for feedback). */
+  /** Square the mover started on this turn (for step-by-step animation). */
   lastFrom: number | null;
   lastVia: 'ladder' | 'chute' | null;
+  /** Who made the last move (so clients can animate their token). */
+  lastMover: string | null;
   winner: string | null;
   moves: number;
 }

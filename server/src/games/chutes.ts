@@ -11,6 +11,7 @@ export function createChutes(playerIds: string[], firstPlayerId: string): Chutes
     lastRoll: null,
     lastFrom: null,
     lastVia: null,
+    lastMover: null,
     winner: null,
     moves: 0,
   };
@@ -31,6 +32,7 @@ export function applyChutesMove(state: ChutesState, playerId: string, move: Chut
 
   const roll = 1 + Math.floor(Math.random() * 6);
   next.lastRoll = roll;
+  next.lastMover = playerId;
   const from = next.positions[playerId] ?? 0;
   next.lastFrom = from;
   next.lastVia = null;
