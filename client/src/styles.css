@@ -1914,6 +1914,85 @@ body {
   color: var(--text-dim);
 }
 
+/* ----------------------------------------------------------------------- */
+/* Wind-up animations: Battleship shots & Dots lines/boxes                  */
+/* ----------------------------------------------------------------------- */
+
+.bs-cell.fresh {
+  position: relative;
+  z-index: 2;
+}
+.bs-cell.fresh.hit {
+  animation: bsboom 0.5s ease-out;
+}
+.bs-cell.fresh.miss {
+  animation: bssplash 0.45s ease-out;
+}
+@keyframes bsboom {
+  0% {
+    transform: scale(1.9);
+    filter: brightness(2.2);
+  }
+  55% {
+    transform: scale(0.88);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes bssplash {
+  0% {
+    transform: scale(0.3);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(1.3);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.edge.h.fresh .line {
+  transform-origin: left center;
+  animation: drawH 0.3s ease-out;
+}
+.edge.v.fresh .line {
+  transform-origin: top center;
+  animation: drawV 0.3s ease-out;
+}
+@keyframes drawH {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes drawV {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+.box.fresh {
+  animation: boxpop 0.45s cubic-bezier(0.34, 1.4, 0.6, 1);
+}
+@keyframes boxpop {
+  0% {
+    transform: scale(0.1);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
 .toast {
   position: fixed;
   left: 50%;

@@ -28,6 +28,23 @@ export function BattleshipBoard({
   const oppId = players.find((p) => p.id !== youId)?.id ?? '';
   const isSpectator = !canPlay;
 
+  // Detect the just-fired cell (newest shot across both boards) to animate it.
+  const [freshCell, setFreshCell] = useState<number | null>(null);
+  const prevShots = useRef<Set<number>>(new Set());
+  const shotCount = Object.values(game.boards).reduce((n, b) => n + (b?.shots.length ?? 0), 0);
+  useEffect(() => {
+    const cur = new Set<number>();
+    for (const b of Object.values(game.boards)) for (const c of b?.shots ?? []) cur.add(c);
+    let added: number | null = null;
+    for (const c of cur) if (!prevShots.current.has(c)) added = c;
+    prevShots.current = cur;
+    if (added != null) {
+      setFreshCell(added);
+      const t = setTimeout(() => setFreshCell(null), 650);
+      return () => clearTimeout(t);
+    }
+  }, [shotCount]);
+
   if (game.phase === 'placing') {
     if (isSpectator) {
       return <p className="bs-status">Players are placing their fleets…</p>;
@@ -55,6 +72,7 @@ export function BattleshipBoard({
             label={`${p.avatar} ${p.name}`}
             canFire={false}
             onFire={() => {}}
+            freshCell={freshCell}
           />
         ))}
       </div>
@@ -70,6 +88,7 @@ export function BattleshipBoard({
         label="🎯 Enemy waters"
         canFire={myTurn}
         onFire={onFire}
+        freshCell={freshCell}
       />
       <FleetGrid
         size={size}
@@ -77,6 +96,7 @@ export function BattleshipBoard({
         shots={game.boards[youId]?.shots ?? []}
         hits={game.boards[youId]?.hits ?? []}
         label="🛡️ Your fleet"
+        freshCell={freshCell}
       />
     </div>
   );
@@ -202,6 +222,7 @@ function FleetGrid({
   label,
   previewCells,
   previewValid,
+  freshCell,
   onCellEnter,
   onCellLeave,
   onCellClick,
@@ -213,6 +234,7 @@ function FleetGrid({
   label: string;
   previewCells?: number[] | null;
   previewValid?: boolean;
+  freshCell?: number | null;
   onCellEnter?: (cell: number) => void;
   onCellLeave?: () => void;
   onCellClick?: (cell: number) => void;
@@ -242,6 +264,7 @@ function FleetGrid({
             isHit ? 'hit' : '',
             isMiss ? 'miss' : '',
             inPreview ? (previewValid ? 'preview' : 'preview-bad') : '',
+            i === freshCell && (isHit || isMiss) ? 'fresh' : '',
           ]
             .filter(Boolean)
             .join(' ');
@@ -270,12 +293,14 @@ function TrackingGrid({
   label,
   canFire,
   onFire,
+  freshCell,
 }: {
   size: number;
   board: { ships: Array<{ cells: number[]; sunk: boolean }>; shots: number[]; hits: number[] } | undefined;
   label: string;
   canFire: boolean;
   onFire: (cell: number) => void;
+  freshCell?: number | null;
 }) {
   const shots = board?.shots ?? [];
   const hits = board?.hits ?? [];
@@ -299,6 +324,7 @@ function TrackingGrid({
             isHit ? (sunkCells.has(i) ? 'hit sunk' : 'hit') : '',
             isMiss ? 'miss' : '',
             fireable ? 'fireable' : '',
+            i === freshCell && (isHit || isMiss) ? 'fresh' : '',
           ]
             .filter(Boolean)
             .join(' ');
