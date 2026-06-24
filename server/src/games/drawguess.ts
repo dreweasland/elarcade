@@ -12,6 +12,7 @@ const WORDS = [
   'rainbow', 'banana', 'cookie', 'dragon', 'ghost', 'crown', 'guitar', 'ice cream', 'butterfly', 'spider',
   'shark', 'turtle', 'frog', 'duck', 'bee', 'cloud', 'train', 'plane', 'kite', 'sock',
   'pumpkin', 'snowman', 'castle', 'whale', 'lion', 'tiger', 'penguin', 'mountain', 'umbrella', 'balloon',
+  'poop'
 ];
 
 let wordCounter = 0;

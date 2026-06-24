@@ -291,8 +291,13 @@ export class RoomManager {
     if (room.players.length < info.minPlayers) {
       return this.send(ws, { type: 'error', message: 'Need at least 2 players.' });
     }
-    if (options && (options.size === 'small' || options.size === 'medium' || options.size === 'large')) {
-      room.options = { size: options.size };
+    if (options) {
+      const clean: GameOptions = {};
+      if (options.size === 'small' || options.size === 'medium' || options.size === 'large') {
+        clean.size = options.size;
+      }
+      if (options.dice === 1 || options.dice === 2) clean.dice = options.dice;
+      room.options = clean;
     }
     this.startRound(room);
     this.broadcast(room);

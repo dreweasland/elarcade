@@ -19,6 +19,7 @@ export function PigBoard({
 }) {
   const myTurn = canPlay && game.turn === youId && !game.winner;
   const playerById = (id: string) => players.find((p) => p.id === id);
+  const faces = game.lastRoll ?? Array(game.diceCount).fill(0);
 
   return (
     <div className="pig-table">
@@ -34,14 +35,27 @@ export function PigBoard({
           );
         })}
       </div>
-      <p className="pig-target">First to {game.target} wins</p>
+      <p className="pig-target">
+        First to {game.target}
+        {game.diceCount === 2 && ' · 2 dice — double 1s wipe your score!'}
+      </p>
 
-      <div className={`pig-die ${game.busted ? 'busted' : ''}`}>
-        {game.busted ? '💥' : game.lastRoll ? DICE[game.lastRoll] : '🎲'}
+      <div className={`pig-dice ${game.busted ? 'busted' : ''} ${game.wipedOut ? 'wiped' : ''}`}>
+        {game.wipedOut ? (
+          <span className="pig-die">💀</span>
+        ) : (
+          faces.map((d: number, i: number) => (
+            <span key={i} className="pig-die">
+              {d ? DICE[d] : '🎲'}
+            </span>
+          ))
+        )}
       </div>
 
       <div className="pig-turn-total">
-        {game.busted ? (
+        {game.wipedOut ? (
+          <span className="pig-bust-text">💀 Snake eyes! Whole score wiped!</span>
+        ) : game.busted ? (
           <span className="pig-bust-text">Busted! Rolled a 1 — turn lost</span>
         ) : (
           <>

@@ -1253,14 +1253,21 @@ body {
   color: var(--text-dim);
   margin: 0;
 }
+.pig-dice {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+}
 .pig-die {
-  font-size: clamp(90px, 30vw, 130px);
+  font-size: clamp(72px, 22vw, 110px);
   line-height: 1;
   color: var(--neon-cyan);
   filter: drop-shadow(0 0 16px rgba(25, 230, 255, 0.5));
   animation: pop 0.18s ease-out;
 }
-.pig-die.busted {
+.pig-dice.busted .pig-die,
+.pig-dice.wiped .pig-die {
+  color: var(--neon-pink);
   filter: drop-shadow(0 0 16px rgba(255, 61, 92, 0.6));
 }
 .pig-turn-total {
@@ -1575,6 +1582,113 @@ body {
 }
 .dg-msg b {
   color: var(--neon-cyan);
+}
+
+/* ----------------------------------------------------------------------- */
+/* Zombie Dice                                                              */
+/* ----------------------------------------------------------------------- */
+
+.zd-table {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.zd-scores {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.zd-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 7px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 2px solid var(--panel-border);
+}
+.zd-score.turn {
+  border-color: var(--neon-green);
+  box-shadow: 0 0 12px rgba(77, 255, 166, 0.4);
+}
+.zd-score.you .zd-score-name {
+  color: var(--neon-pink);
+}
+.zd-score-avatar {
+  font-size: 24px;
+}
+.zd-score-name {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.zd-score-num {
+  font-weight: 800;
+  color: var(--neon-yellow);
+  font-size: 14px;
+}
+.zd-target {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 0;
+}
+.zd-status {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text);
+}
+.zd-status b {
+  color: var(--neon-yellow);
+  font-size: 17px;
+}
+.zd-status .danger b {
+  color: var(--neon-pink);
+}
+.zd-rolled {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  min-height: 76px;
+  align-items: center;
+}
+.zd-die {
+  width: clamp(54px, 16vw, 70px);
+  height: clamp(54px, 16vw, 70px);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(28px, 8vw, 38px);
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  animation: pop 0.18s ease-out;
+}
+.zd-die.green {
+  background: linear-gradient(150deg, #4dffa6, #1d9c5e);
+}
+.zd-die.yellow {
+  background: linear-gradient(150deg, #ffe14d, #c9a313);
+}
+.zd-die.red {
+  background: linear-gradient(150deg, #ff7a7a, #d11d2c);
+}
+.zd-cup-hint {
+  color: var(--text-dim);
+  font-size: 14px;
+}
+.zd-note {
+  font-size: 14px;
+  min-height: 22px;
+  text-align: center;
+  color: var(--neon-green);
+}
+.zd-dim {
+  color: var(--text-dim);
 }
 
 .toast {

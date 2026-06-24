@@ -20,11 +20,14 @@ export type GameId =
   | 'memory'
   | 'pig'
   | 'dots'
-  | 'drawguess';
+  | 'drawguess'
+  | 'zombie';
 
 /** Optional config the host can choose in the lobby before starting. */
 export interface GameOptions {
   size?: 'small' | 'medium' | 'large';
+  /** Pig: play with one die (classic) or two (snake-eyes wipes your score). */
+  dice?: 1 | 2;
 }
 
 export interface GameInfo {
@@ -99,6 +102,14 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Draw & Guess',
     tagline: 'One draws, everyone guesses — 2 to 4 players!',
     icon: '🎨',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  zombie: {
+    id: 'zombie',
+    name: 'Zombie Dice',
+    tagline: 'Eat brains, dodge shotguns, push your luck!',
+    icon: '🧟',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -281,16 +292,59 @@ export interface PigState {
   scores: Record<string, number>;
   /** Points accumulated this turn but not yet banked. */
   turnTotal: number;
-  /** Last die face rolled (1-6), or null. */
-  lastRoll: number | null;
-  /** True when the last roll was a 1 (turn busted). */
+  /** How many dice are rolled each turn (1 = classic, 2 = snake-eyes variant). */
+  diceCount: number;
+  /** The dice faces just rolled (length 1 or 2), or null. */
+  lastRoll: number[] | null;
+  /** True when the last roll busted the turn (a single 1). */
   busted: boolean;
+  /** Two-dice only: true when double 1s wiped the player's whole score. */
+  wipedOut: boolean;
   target: number;
   winner: string | null;
   moves: number;
 }
 
 export type PigMove = { action: 'roll' } | { action: 'hold' };
+
+// --- Zombie Dice -----------------------------------------------------------
+
+export type ZombieColor = 'green' | 'yellow' | 'red';
+export type ZombieFace = 'brain' | 'foot' | 'shotgun';
+
+export interface ZombieDie {
+  color: ZombieColor;
+  face: ZombieFace;
+}
+
+export interface ZombieState {
+  kind: 'zombie';
+  seating: string[];
+  turn: string | null;
+  /** Banked brains per player. */
+  scores: Record<string, number>;
+  /** Brains eaten so far this turn (not yet banked). */
+  brains: number;
+  /** Shotgun blasts this turn — 3 ends the turn with nothing. */
+  shotguns: number;
+  /** Footstep dice carried over to re-roll. */
+  kept: ZombieDie[];
+  /** The dice from the last roll, for display. */
+  rolled: ZombieDie[] | null;
+  /** How many dice remain in the cup. */
+  cupCount: number;
+  /** True when the last roll was a third shotgun (turn lost). */
+  busted: boolean;
+  target: number;
+  winner: string | null;
+  moves: number;
+  /** Server-only: remaining dice colors in the cup. Redacted on the wire. */
+  cup?: ZombieColor[];
+  /** Server-only: brain-die colors set aside (for cup reshuffle). Redacted. */
+  usedBrains?: ZombieColor[];
+}
+
+export type ZombieMove = { action: 'roll' } | { action: 'bank' };
 
 // --- Dots & Boxes ----------------------------------------------------------
 
@@ -360,7 +414,8 @@ export type GameState =
   | MemoryState
   | PigState
   | DotsState
-  | DrawGuessState;
+  | DrawGuessState
+  | ZombieState;
 export type GameMove =
   | TicTacToeMove
   | ConnectFourMove
@@ -369,7 +424,8 @@ export type GameMove =
   | MemoryMove
   | PigMove
   | DotsMove
-  | DrawGuessMove;
+  | DrawGuessMove
+  | ZombieMove;
 
 export interface RoomState {
   code: string;

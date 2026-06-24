@@ -1,8 +1,12 @@
-import { PigMove, PigState } from '../../../shared/protocol.js';
+import { GameOptions, PigMove, PigState } from '../../../shared/protocol.js';
 
 const TARGET = 100;
 
-export function createPig(playerIds: string[], firstPlayerId: string): PigState {
+export function createPig(
+  playerIds: string[],
+  firstPlayerId: string,
+  options?: GameOptions,
+): PigState {
   const scores: Record<string, number> = {};
   for (const id of playerIds) scores[id] = 0;
   return {
@@ -11,8 +15,10 @@ export function createPig(playerIds: string[], firstPlayerId: string): PigState 
     turn: firstPlayerId,
     scores,
     turnTotal: 0,
+    diceCount: options?.dice === 2 ? 2 : 1,
     lastRoll: null,
     busted: false,
+    wipedOut: false,
     target: TARGET,
     winner: null,
     moves: 0,
@@ -24,24 +30,35 @@ export interface MoveResult {
   error?: string;
 }
 
+const die = () => 1 + Math.floor(Math.random() * 6);
+
 export function applyPigMove(state: PigState, playerId: string, move: PigMove): MoveResult {
   if (state.winner) return { state, error: 'The game is over.' };
   if (state.turn !== playerId) return { state, error: 'It is not your turn.' };
 
   const next: PigState = structuredClone(state);
   next.moves++;
+  next.busted = false;
+  next.wipedOut = false;
 
   if (move.action === 'roll') {
-    const roll = 1 + Math.floor(Math.random() * 6);
+    const roll = Array.from({ length: next.diceCount }, die);
     next.lastRoll = roll;
-    if (roll === 1) {
-      // Bust: lose this turn's points, pass the dice.
+    const ones = roll.filter((d) => d === 1).length;
+
+    if (next.diceCount === 2 && ones === 2) {
+      // Snake eyes — lose this turn's points AND your whole banked score.
+      next.turnTotal = 0;
+      next.scores[playerId] = 0;
+      next.wipedOut = true;
+      next.turn = nextPlayer(next, playerId);
+    } else if (ones >= 1) {
+      // A single 1 — lose this turn's points only.
       next.turnTotal = 0;
       next.busted = true;
       next.turn = nextPlayer(next, playerId);
     } else {
-      next.turnTotal += roll;
-      next.busted = false;
+      next.turnTotal += roll.reduce((a, b) => a + b, 0);
       // Turn stays — keep rolling or hold.
     }
     return { state: next };
@@ -50,7 +67,6 @@ export function applyPigMove(state: PigState, playerId: string, move: PigMove): 
   if (move.action === 'hold') {
     next.scores[playerId] = (next.scores[playerId] ?? 0) + next.turnTotal;
     next.turnTotal = 0;
-    next.busted = false;
     next.lastRoll = null;
     if (next.scores[playerId] >= next.target) {
       next.winner = playerId;

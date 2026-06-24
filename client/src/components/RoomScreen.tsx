@@ -10,6 +10,7 @@ import { MemoryBoard } from './MemoryBoard.tsx';
 import { PigBoard } from './PigBoard.tsx';
 import { DotsBoard } from './DotsBoard.tsx';
 import { DrawGuessBoard } from './DrawGuessBoard.tsx';
+import { ZombieBoard } from './ZombieBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -37,7 +38,8 @@ export function RoomScreen() {
       g?.kind === 'memory' ||
       g?.kind === 'pig' ||
       g?.kind === 'dots' ||
-      g?.kind === 'drawguess'
+      g?.kind === 'drawguess' ||
+      g?.kind === 'zombie'
     ) {
       progress = g.moves;
     }
@@ -203,6 +205,15 @@ export function RoomScreen() {
           canPlay={!isSpectator}
           onGuess={(text) => arcade.move({ action: 'guess', text })}
         />
+      ) : g && g.kind === 'zombie' ? (
+        <ZombieBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onRoll={() => arcade.move({ action: 'roll' })}
+          onBank={() => arcade.move({ action: 'bank' })}
+        />
       ) : (
         <div className="board-placeholder">
           <span className="big-icon">{info.icon}</span>
@@ -249,6 +260,13 @@ function WaitingLobby({
   const enough = room.players.length >= info.minPlayers;
   const sizeInfo = SIZE_INFO[room.game];
   const [size, setSize] = useState<Size>('medium');
+  const [dice, setDice] = useState<1 | 2>(1);
+
+  const startOptions = (): GameOptions | undefined => {
+    if (room.game === 'pig') return { dice };
+    if (sizeInfo) return { size };
+    return undefined;
+  };
 
   if (isHost && enough) {
     return (
@@ -276,7 +294,22 @@ function WaitingLobby({
             </div>
           </div>
         )}
-        <button className="btn primary big" onClick={() => onStart(sizeInfo ? { size } : undefined)}>
+        {room.game === 'pig' && (
+          <div className="size-picker">
+            <span className="field-label">Dice</span>
+            <div className="size-options">
+              <button className={`size-btn ${dice === 1 ? 'selected' : ''}`} onClick={() => setDice(1)}>
+                <b>1 Die</b>
+                <span>Classic</span>
+              </button>
+              <button className={`size-btn ${dice === 2 ? 'selected' : ''}`} onClick={() => setDice(2)}>
+                <b>2 Dice</b>
+                <span>Snake-eyes wipe!</span>
+              </button>
+            </div>
+          </div>
+        )}
+        <button className="btn primary big" onClick={() => onStart(startOptions())}>
           Start game ▶
         </button>
       </>

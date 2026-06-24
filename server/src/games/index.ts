@@ -7,6 +7,7 @@ import { applyMemoryMove, createMemory, viewMemory } from './memory.js';
 import { applyPigMove, createPig } from './pig.js';
 import { applyDotsMove, createDots } from './dots.js';
 import { applyDrawGuessMove, createDrawGuess, tickDrawGuess, viewDrawGuess } from './drawguess.js';
+import { applyZombieMove, createZombie, viewZombie } from './zombie.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -59,7 +60,7 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     viewFor: (state, viewerId) => viewMemory(state as any, viewerId),
   },
   pig: {
-    createState: (ids, first) => createPig(ids, first),
+    createState: (ids, first, options) => createPig(ids, first, options),
     applyMove: (state, playerId, move) => applyPigMove(state as any, playerId, move as any),
   },
   dots: {
@@ -71,5 +72,10 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     applyMove: (state, playerId, move) => applyDrawGuessMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewDrawGuess(state as any, viewerId),
     tick: (state) => tickDrawGuess(state as any),
+  },
+  zombie: {
+    createState: (ids, first) => createZombie(ids, first),
+    applyMove: (state, playerId, move) => applyZombieMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewZombie(state as any, viewerId),
   },
 };
