@@ -1,10 +1,32 @@
-import { useState } from 'react';
-import { AVATARS, GAMES, GameId } from '../../../shared/protocol.ts';
+import { useMemo, useState } from 'react';
+import {
+  AVATARS,
+  CATEGORIES,
+  GAMES,
+  GameId,
+  GameInfo,
+  isDuo,
+  playerCountLabel,
+} from '../../../shared/protocol.ts';
 import { useArcade } from '../useArcade.ts';
 import { sfx } from '../sounds.ts';
 
 const NAME_KEY = 'el-arcade-name';
 const AVATAR_KEY = 'el-arcade-avatar';
+
+/** Lobby filter chips. Single-select; each is just a predicate over a game. */
+type Filter = { id: string; label: string; test: (g: GameInfo) => boolean };
+
+const FILTERS: Filter[] = [
+  { id: 'all', label: 'All', test: () => true },
+  { id: 'duo', label: '2-player', test: isDuo },
+  { id: 'family', label: 'Family', test: (g) => !isDuo(g) },
+  ...CATEGORIES.map((c) => ({
+    id: c.id,
+    label: c.label,
+    test: (g: GameInfo) => g.category === c.id,
+  })),
+];
 
 export function HomeScreen() {
   const { state, arcade } = useArcade();
@@ -15,9 +37,20 @@ export function HomeScreen() {
   const [code, setCode] = useState(
     () => (new URLSearchParams(location.search).get('code') ?? '').toUpperCase().replace(/[^A-Z]/g, ''),
   );
+  const [filterId, setFilterId] = useState('all');
   const connecting = state.status === 'connecting';
 
   const ready = name.trim().length > 0;
+
+  const filter = FILTERS.find((f) => f.id === filterId) ?? FILTERS[0];
+  /** Games passing the active filter, grouped into category sections (in order). */
+  const sections = useMemo(() => {
+    const matches = Object.values(GAMES).filter(filter.test);
+    return CATEGORIES.map((c) => ({
+      ...c,
+      games: matches.filter((g) => g.category === c.id),
+    })).filter((s) => s.games.length > 0);
+  }, [filter]);
 
   function remember() {
     localStorage.setItem(NAME_KEY, name.trim());
@@ -78,21 +111,46 @@ export function HomeScreen() {
 
       <section className="panel">
         <h2 className="panel-title">Choose a game</h2>
-        <div className="cabinets">
-          {Object.values(GAMES).map((g) => (
+
+        <div className="game-filters" role="group" aria-label="Filter games">
+          {FILTERS.map((f) => (
             <button
-              key={g.id}
-              className="cabinet"
-              disabled={!ready || connecting}
-              onClick={() => createGame(g.id)}
+              key={f.id}
+              className={`chip ${f.id === filterId ? 'active' : ''}`}
+              aria-pressed={f.id === filterId}
+              onClick={() => {
+                setFilterId(f.id);
+                sfx.place();
+              }}
             >
-              <span className="cabinet-icon">{g.icon}</span>
-              <span className="cabinet-name">{g.name}</span>
-              <span className="cabinet-tag">{g.tagline}</span>
-              <span className="cabinet-cta">{connecting ? 'Starting…' : 'Create room'}</span>
+              {f.label}
             </button>
           ))}
         </div>
+
+        {sections.length === 0 && <p className="no-games">No games match that filter.</p>}
+
+        {sections.map((s) => (
+          <div key={s.id} className="game-section">
+            <h3 className="section-head">{s.label}</h3>
+            <div className="cabinets">
+              {s.games.map((g) => (
+                <button
+                  key={g.id}
+                  className="cabinet"
+                  disabled={!ready || connecting}
+                  onClick={() => createGame(g.id)}
+                >
+                  <span className="cabinet-icon">{g.icon}</span>
+                  <span className="cabinet-name">{g.name}</span>
+                  <span className="cabinet-players">{playerCountLabel(g)}</span>
+                  <span className="cabinet-tag">{g.tagline}</span>
+                  <span className="cabinet-cta">{connecting ? 'Starting…' : 'Create room'}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
       </section>
 
       <section className="panel join">

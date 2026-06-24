@@ -4,7 +4,7 @@ A tiny multiplayer arcade built for **E**merson & **L**eighton. Players join fro
 their own phones, tablets, or laptops using a short room code — no accounts, no
 passwords, just pick a name and an avatar and play.
 
-**Games: Tic-Tac-Toe, Connect Four, Battleship, UNO, Memory Match, Pig (1 or 2 dice), Dots & Boxes, Draw & Guess, Zombie Dice, Chutes & Ladders & Can't Stop.** More cabinets drop in easily.
+**Games: Tic-Tac-Toe, Connect Four, Battleship, UNO, Memory Match, Pig (1 or 2 dice), Dots & Boxes, Draw & Guess, Zombie Dice, Chutes & Ladders, Can't Stop, Telephone (write-draw-pass, 3–8 players), Fishbowl (describe/one-word/charades teams, 4–8 players), Go Fish, Odd One Out, Rock Paper Scissors & Checkers.** More cabinets drop in easily.
 
 ## Features
 
@@ -69,9 +69,10 @@ allowed (they are by default on the platforms above).
 
 The engine is game-agnostic; a new game is four small, local changes:
 
-1. **Types** — add an entry to `GAMES` in `shared/protocol.ts` plus your
-   `…State` (with a `kind` tag) and `…Move` types; add them to the `GameState`
-   / `GameMove` unions.
+1. **Types** — add an entry to `GAMES` in `shared/protocol.ts` (including its
+   `category` — one of `CATEGORIES` — so it drops into the lobby's filter chips
+   and section automatically) plus your `…State` (with a `kind` tag) and `…Move`
+   types; add them to the `GameState` / `GameMove` unions.
 2. **Rules** — add a module under `server/src/games/` (see `connectFour.ts`)
    exporting `create…` and `apply…Move`.
 3. **Register** — add it to `GAME_MODULES` in `server/src/games/index.ts`. The

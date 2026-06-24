@@ -10,6 +10,12 @@ import { applyDrawGuessMove, createDrawGuess, tickDrawGuess, viewDrawGuess } fro
 import { applyZombieMove, createZombie, viewZombie } from './zombie.js';
 import { applyChutesMove, createChutes } from './chutes.js';
 import { applyCantStopMove, createCantStop } from './cantstop.js';
+import { applyTelephoneMove, createTelephone, tickTelephone, viewTelephone } from './telephone.js';
+import { applyFishbowlMove, createFishbowl, tickFishbowl, viewFishbowl } from './fishbowl.js';
+import { applyGoFishMove, createGoFish, viewGoFish } from './gofish.js';
+import { applyOldMaidMove, createOldMaid, viewOldMaid } from './oldmaid.js';
+import { applyRpsMove, createRps, viewRps } from './rps.js';
+import { applyCheckersMove, createCheckers } from './checkers.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -87,5 +93,36 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
   cantstop: {
     createState: (ids, first) => createCantStop(ids, first),
     applyMove: (state, playerId, move) => applyCantStopMove(state as any, playerId, move as any),
+  },
+  telephone: {
+    createState: (ids) => createTelephone(ids),
+    applyMove: (state, playerId, move) => applyTelephoneMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewTelephone(state as any, viewerId),
+    tick: (state) => tickTelephone(state as any),
+  },
+  fishbowl: {
+    createState: (ids, _first, options) => createFishbowl(ids, options),
+    applyMove: (state, playerId, move) => applyFishbowlMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewFishbowl(state as any, viewerId),
+    tick: (state) => tickFishbowl(state as any),
+  },
+  gofish: {
+    createState: (ids, first) => createGoFish(ids, first),
+    applyMove: (state, playerId, move) => applyGoFishMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewGoFish(state as any, viewerId),
+  },
+  oldmaid: {
+    createState: (ids, first) => createOldMaid(ids, first),
+    applyMove: (state, playerId, move) => applyOldMaidMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewOldMaid(state as any, viewerId),
+  },
+  rps: {
+    createState: (ids) => createRps(ids),
+    applyMove: (state, playerId, move) => applyRpsMove(state as any, playerId, move as any),
+    viewFor: (state, viewerId) => viewRps(state as any, viewerId),
+  },
+  checkers: {
+    createState: (ids, first) => createCheckers(ids, first),
+    applyMove: (state, playerId, move) => applyCheckersMove(state as any, playerId, move as any),
   },
 };

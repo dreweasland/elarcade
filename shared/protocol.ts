@@ -23,22 +23,60 @@ export type GameId =
   | 'drawguess'
   | 'zombie'
   | 'chutes'
-  | 'cantstop';
+  | 'cantstop'
+  | 'telephone'
+  | 'fishbowl'
+  | 'gofish'
+  | 'oldmaid'
+  | 'rps'
+  | 'checkers';
 
 /** Optional config the host can choose in the lobby before starting. */
 export interface GameOptions {
   size?: 'small' | 'medium' | 'large';
   /** Pig: play with one die (classic) or two (snake-eyes wipes your score). */
   dice?: 1 | 2;
+  /** Fishbowl: how many words each player adds to the bowl (default 3). */
+  words?: number;
 }
+
+/** Genre buckets used to group & filter the lobby. */
+export type GameCategory = 'strategy' | 'dice' | 'party' | 'cards' | 'race';
+
+export interface CategoryInfo {
+  id: GameCategory;
+  label: string;
+}
+
+/** Display order of the category sections in the lobby. */
+export const CATEGORIES: CategoryInfo[] = [
+  { id: 'strategy', label: 'Strategy' },
+  { id: 'dice', label: 'Dice' },
+  { id: 'party', label: 'Party' },
+  { id: 'cards', label: 'Cards' },
+  { id: 'race', label: 'Race' },
+];
 
 export interface GameInfo {
   id: GameId;
   name: string;
   tagline: string;
   icon: string;
+  category: GameCategory;
   minPlayers: number;
   maxPlayers: number;
+}
+
+/** Short player-count badge, e.g. "2P" or "2–4P", derived from min/max. */
+export function playerCountLabel(g: GameInfo): string {
+  return g.minPlayers === g.maxPlayers
+    ? `${g.minPlayers}P`
+    : `${g.minPlayers}–${g.maxPlayers}P`;
+}
+
+/** True when a game only ever seats exactly two players ("just us"). */
+export function isDuo(g: GameInfo): boolean {
+  return g.maxPlayers === 2;
 }
 
 /** The arcade's catalog of games. Add a new entry here + a server game module. */
@@ -48,6 +86,7 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Tic-Tac-Toe',
     tagline: 'Three in a row wins!',
     icon: '⭕',
+    category: 'strategy',
     minPlayers: 2,
     maxPlayers: 2,
   },
@@ -56,6 +95,7 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Connect Four',
     tagline: 'Drop discs, get four in a row!',
     icon: '🔴',
+    category: 'strategy',
     minPlayers: 2,
     maxPlayers: 2,
   },
@@ -64,22 +104,25 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Battleship',
     tagline: 'Hide your fleet, sink theirs!',
     icon: '🚢',
+    category: 'strategy',
     minPlayers: 2,
     maxPlayers: 2,
   },
   uno: {
     id: 'uno',
     name: 'UNO',
-    tagline: 'Match colors & numbers — 2 to 4 players!',
+    tagline: 'Match colors & numbers',
     icon: '🎴',
+    category: 'cards',
     minPlayers: 2,
     maxPlayers: 4,
   },
   memory: {
     id: 'memory',
     name: 'Memory Match',
-    tagline: 'Flip cards, find the pairs — 2 to 4 players!',
+    tagline: 'Flip cards, find the pairs',
     icon: '🧠',
+    category: 'party',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -88,22 +131,25 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Pig',
     tagline: 'Push your luck — roll big, don’t bust!',
     icon: '🎲',
+    category: 'dice',
     minPlayers: 2,
     maxPlayers: 4,
   },
   dots: {
     id: 'dots',
     name: 'Dots & Boxes',
-    tagline: 'Claim lines, complete boxes — 2 to 4 players!',
+    tagline: 'Claim lines, complete boxes',
     icon: '🔳',
+    category: 'strategy',
     minPlayers: 2,
     maxPlayers: 4,
   },
   drawguess: {
     id: 'drawguess',
     name: 'Draw & Guess',
-    tagline: 'One draws, everyone guesses — 2 to 4 players!',
+    tagline: 'One draws, everyone guesses',
     icon: '🎨',
+    category: 'party',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -112,6 +158,7 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Zombie Dice',
     tagline: 'Eat brains, dodge shotguns, push your luck!',
     icon: '🧟',
+    category: 'dice',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -120,6 +167,7 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Chutes & Ladders',
     tagline: 'Climb ladders, dodge chutes, race to 100!',
     icon: '🪜',
+    category: 'race',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -128,8 +176,63 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: "Can't Stop",
     tagline: 'Press your luck up the columns — claim 3 to win!',
     icon: '🧗',
+    category: 'dice',
     minPlayers: 2,
     maxPlayers: 4,
+  },
+  telephone: {
+    id: 'telephone',
+    name: 'Telephone',
+    tagline: 'Write it, draw it, pass it on — chaos by the reveal!',
+    icon: '☎️',
+    category: 'party',
+    minPlayers: 3,
+    maxPlayers: 8,
+  },
+  fishbowl: {
+    id: 'fishbowl',
+    name: 'Fishbowl',
+    tagline: 'Describe, one word, charades — two teams, one bowl!',
+    icon: '🐠',
+    category: 'party',
+    minPlayers: 4,
+    maxPlayers: 8,
+  },
+  gofish: {
+    id: 'gofish',
+    name: 'Go Fish',
+    tagline: 'Ask for a rank, reel in the books!',
+    icon: '🎣',
+    category: 'cards',
+    minPlayers: 2,
+    maxPlayers: 2,
+  },
+  oldmaid: {
+    id: 'oldmaid',
+    name: 'Odd One Out',
+    tagline: "Match your pairs — don't get stuck with the odd card!",
+    icon: '🃏',
+    category: 'cards',
+    minPlayers: 2,
+    maxPlayers: 2,
+  },
+  rps: {
+    id: 'rps',
+    name: 'Rock Paper Scissors',
+    tagline: 'Best of five — rock smashes, paper covers, scissors cut!',
+    icon: '✊',
+    category: 'party',
+    minPlayers: 2,
+    maxPlayers: 2,
+  },
+  checkers: {
+    id: 'checkers',
+    name: 'Checkers',
+    tagline: 'Jump, capture, get crowned king!',
+    icon: '🟤',
+    category: 'strategy',
+    minPlayers: 2,
+    maxPlayers: 2,
   },
 };
 
@@ -482,6 +585,227 @@ export interface DrawGuessState {
 
 export type DrawGuessMove = { action: 'guess'; text: string };
 
+// --- Telephone (write → draw → pass it on) ---------------------------------
+
+/** One page in a Telephone album: either a written line or a drawing. */
+export interface TelephonePage {
+  /** Player id who created this page. */
+  authorId: string;
+  kind: 'text' | 'drawing';
+  /** Present on text pages (a prompt or a caption). */
+  text?: string;
+  /** Present on drawing pages. */
+  strokes?: DrawStroke[];
+}
+
+export interface TelephoneState {
+  kind: 'telephone';
+  /** Fixed seating order; length = player count. */
+  seating: string[];
+  /** Current round (0-based). Round 0 = everyone writes their own starting line. */
+  round: number;
+  /** Total play rounds = player count (each album visits every player once). */
+  totalRounds: number;
+  /** 'writing' on even rounds, 'drawing' on odd; then 'reveal', then 'over'. */
+  phase: 'writing' | 'drawing' | 'reveal' | 'over';
+  secondsLeft: number;
+  /**
+   * albums[i] is the chain that started with seating[i]; albums[i][r] is the
+   * page made in round r. Redacted during play (you only ever see your own
+   * prompt via `youRespondTo`); fully revealed page-by-page during 'reveal'.
+   */
+  albums: TelephonePage[][];
+  /** Player ids who have submitted their page for the current round. */
+  submitted: string[];
+  /** Reveal phase: which album is shown, and how many of its pages are visible. */
+  revealAlbum: number;
+  revealPage: number;
+  /**
+   * Filled per-viewer by the server during play: the single page YOU must
+   * respond to this round (the drawing to caption, or the line to draw). Null
+   * at round 0 (write a fresh line) and outside your view. */
+  youRespondTo?: TelephonePage | null;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type TelephoneMove =
+  | { action: 'submitText'; text: string }
+  | { action: 'submitDrawing'; strokes: DrawStroke[] }
+  | { action: 'reveal'; dir: 'next' | 'prev' };
+
+// --- Fishbowl (one bowl of words, three escalating rounds, two teams) -------
+
+/** The three classic rounds, all played over the same set of words. */
+export type FishbowlRound = 'describe' | 'oneword' | 'charades';
+export const FISHBOWL_ROUNDS: FishbowlRound[] = ['describe', 'oneword', 'charades'];
+
+export interface FishbowlState {
+  kind: 'fishbowl';
+  /** Seating order; teams alternate around it (even = team 0, odd = team 1). */
+  seating: string[];
+  /** Team (0 or 1) per player id. */
+  teams: Record<string, 0 | 1>;
+  /** How many words each player tosses into the bowl. */
+  wordsPerPlayer: number;
+  /** 'writing' (filling the bowl) → 'ready' (between turns) → 'clue' (timer on) → 'over'. */
+  phase: 'writing' | 'ready' | 'clue' | 'over';
+  /** 0 = describe, 1 = one word, 2 = charades. */
+  round: number;
+  roundKind: FishbowlRound;
+  /** Whose team is up (0 or 1). */
+  activeTeam: 0 | 1;
+  /** The player giving clues right now (the only one who sees the word), or null. */
+  clueGiver: string | null;
+  /** Per-team rotation pointer into that team's member list. */
+  turnPointer: [number, number];
+  secondsLeft: number;
+  turnSeconds: number;
+  /** Words still to guess this round. Server-only — redacted on the wire. */
+  bowl?: string[];
+  /** Master list of every word in play. Server-only — redacted on the wire. */
+  allWords?: string[];
+  /** How many words remain in the bowl this round (public). */
+  bowlCount: number;
+  /** Total words in play (set once writing closes). */
+  totalWords: number;
+  /** The word being conveyed — redacted to everyone but the clue-giver. */
+  currentWord: string | null;
+  /** Correct guesses during the current turn. */
+  turnCorrect: number;
+  /** Team scores, indexed by team. */
+  scores: [number, number];
+  /** Player ids who have tossed their words in (writing phase). */
+  submitted: string[];
+  /** Server-only: each player's words before they're shuffled in. Redacted. */
+  pending?: Record<string, string[]>;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type FishbowlMove =
+  | { action: 'submitWords'; words: string[] }
+  | { action: 'start' }
+  | { action: 'correct' }
+  | { action: 'skip' };
+
+// --- Playing cards (shared by Go Fish & Odd One Out) -----------------------
+
+export type CardRank =
+  | 'A' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10' | 'J' | 'Q' | 'K';
+export type CardSuit = 'spades' | 'hearts' | 'diamonds' | 'clubs';
+export const CARD_RANKS: CardRank[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+export const CARD_SUITS: CardSuit[] = ['spades', 'hearts', 'diamonds', 'clubs'];
+
+export interface PlayingCard {
+  id: string;
+  rank: CardRank;
+  suit: CardSuit;
+}
+
+/** Emoji per suit, for rendering card faces. */
+export const SUIT_EMOJI: Record<CardSuit, string> = {
+  spades: '♠️',
+  hearts: '♥️',
+  diamonds: '♦️',
+  clubs: '♣️',
+};
+
+// --- Go Fish ---------------------------------------------------------------
+
+export interface GoFishState {
+  kind: 'gofish';
+  seating: string[];
+  /** Each player's hand. Own hand is real; opponents' are redacted to []. */
+  hands: Record<string, PlayingCard[]>;
+  /** Card count per hand (so you can see how many the opponent holds). */
+  handCounts: Record<string, number>;
+  /** The draw pile ("the ocean"). Server-only — redacted on the wire. */
+  pool?: PlayingCard[];
+  poolCount: number;
+  /** Completed sets of four ("books") per player. */
+  books: Record<string, number>;
+  /** Which ranks each player has booked (for display). */
+  bookRanks: Record<string, CardRank[]>;
+  turn: string | null;
+  /** Human-readable last action (with {playerId} tokens), for the table log. */
+  lastAction: string | null;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type GoFishMove = { action: 'ask'; rank: CardRank };
+
+// --- Odd One Out (Old Maid) ------------------------------------------------
+
+export interface OldMaidState {
+  kind: 'oldmaid';
+  seating: string[];
+  /** Own hand is real; the opponent's is redacted to []. Use handCounts for backs. */
+  hands: Record<string, PlayingCard[]>;
+  handCounts: Record<string, number>;
+  /** Pairs discarded per player so far (for display). */
+  pairs: Record<string, number>;
+  turn: string | null;
+  /** The card the active player just drew (now public — it left the opponent's hand). */
+  lastDrawn: PlayingCard | null;
+  /** Whether that draw completed a pair. */
+  lastPaired: boolean;
+  /** Player left holding the odd card at the end. */
+  loser: string | null;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type OldMaidMove = { action: 'draw'; index: number };
+
+// --- Rock Paper Scissors ---------------------------------------------------
+
+export type RpsPick = 'rock' | 'paper' | 'scissors';
+
+export interface RpsState {
+  kind: 'rps';
+  seating: string[];
+  scores: Record<string, number>;
+  /** First to this many round wins takes the match. */
+  target: number;
+  round: number;
+  /** This round's throws. Server-only — redacted until both are in. */
+  picks?: Record<string, RpsPick | null>;
+  /** Who has locked in their throw this round (public). */
+  locked: Record<string, boolean>;
+  /** The last resolved round: the revealed throws + winner ('tie' or player id). */
+  lastResult: { picks: Record<string, RpsPick>; winner: string | 'tie' } | null;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type RpsMove = { action: 'throw'; pick: RpsPick };
+
+// --- Checkers --------------------------------------------------------------
+
+export interface CheckerPiece {
+  color: 'r' | 'b';
+  king: boolean;
+}
+
+export interface CheckersState {
+  kind: 'checkers';
+  /** 64 squares, index = row*8 + col, row 0 = top (black's home row). */
+  board: (CheckerPiece | null)[];
+  /** Player id -> color. Red ('r') starts at the bottom and moves upward. */
+  marks: Record<string, 'r' | 'b'>;
+  turn: string | null;
+  /** Mid multi-jump: the square the chaining piece must keep jumping from. */
+  mustContinueFrom: number | null;
+  /** Squares touched by the last move (for highlighting). */
+  lastMove: number[] | null;
+  winner: string | 'draw' | null;
+  moves: number;
+}
+
+export type CheckersMove = { action: 'move'; from: number; to: number };
+
 export type GameState =
   | TicTacToeState
   | ConnectFourState
@@ -493,7 +817,13 @@ export type GameState =
   | DrawGuessState
   | ZombieState
   | ChutesState
-  | CantStopState;
+  | CantStopState
+  | TelephoneState
+  | FishbowlState
+  | GoFishState
+  | OldMaidState
+  | RpsState
+  | CheckersState;
 export type GameMove =
   | TicTacToeMove
   | ConnectFourMove
@@ -505,7 +835,13 @@ export type GameMove =
   | DrawGuessMove
   | ZombieMove
   | ChutesMove
-  | CantStopMove;
+  | CantStopMove
+  | TelephoneMove
+  | FishbowlMove
+  | GoFishMove
+  | OldMaidMove
+  | RpsMove
+  | CheckersMove;
 
 export interface RoomState {
   code: string;

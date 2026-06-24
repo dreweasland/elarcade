@@ -13,6 +13,12 @@ import { DrawGuessBoard } from './DrawGuessBoard.tsx';
 import { ZombieBoard } from './ZombieBoard.tsx';
 import { ChutesBoard } from './ChutesBoard.tsx';
 import { CantStopBoard } from './CantStopBoard.tsx';
+import { TelephoneBoard } from './TelephoneBoard.tsx';
+import { FishbowlBoard } from './FishbowlBoard.tsx';
+import { GoFishBoard } from './GoFishBoard.tsx';
+import { OldMaidBoard } from './OldMaidBoard.tsx';
+import { RpsBoard } from './RpsBoard.tsx';
+import { CheckersBoard } from './CheckersBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -43,7 +49,13 @@ export function RoomScreen() {
       g?.kind === 'drawguess' ||
       g?.kind === 'zombie' ||
       g?.kind === 'chutes' ||
-      g?.kind === 'cantstop'
+      g?.kind === 'cantstop' ||
+      g?.kind === 'telephone' ||
+      g?.kind === 'fishbowl' ||
+      g?.kind === 'gofish' ||
+      g?.kind === 'oldmaid' ||
+      g?.kind === 'rps' ||
+      g?.kind === 'checkers'
     ) {
       progress = g.moves;
     }
@@ -90,8 +102,12 @@ export function RoomScreen() {
       : g.ready.includes(state.youId)
         ? 'Waiting for opponent…'
         : 'Place your ships!';
-  } else if (room.status === 'playing' && g && g.kind === 'drawguess') {
-    banner = ''; // its own board shows round / timer / drawer
+  } else if (
+    room.status === 'playing' &&
+    g &&
+    (g.kind === 'drawguess' || g.kind === 'telephone' || g.kind === 'fishbowl' || g.kind === 'rps')
+  ) {
+    banner = ''; // its own board shows round / timer / status
   } else if (room.status === 'playing' && g) {
     const turnId = 'turn' in g ? g.turn : null;
     if (!isSpectator && turnId === state.youId) {
@@ -101,7 +117,8 @@ export function RoomScreen() {
       banner = t ? `${t.avatar} ${t.name}'s turn` : 'Waiting…';
     }
   } else if (room.status === 'finished' && g) {
-    if (g.winner === 'draw') banner = "It's a draw! 🤝";
+    if (g.kind === 'telephone' || g.kind === 'fishbowl') banner = ''; // board shows its own wrap-up
+    else if (g.winner === 'draw') banner = "It's a draw! 🤝";
     else if (g.winner === state.youId) banner = 'You win! 🎉';
     else banner = `${room.players.find((p) => p.id === g.winner)?.name ?? 'Player'} wins! 🏆`;
   }
@@ -236,6 +253,60 @@ export function RoomScreen() {
           onChoose={(index) => arcade.move({ action: 'choose', index })}
           onStop={() => arcade.move({ action: 'stop' })}
         />
+      ) : g && g.kind === 'telephone' ? (
+        <TelephoneBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          hostId={room.hostId}
+          canPlay={!isSpectator}
+          onSubmitText={(text) => arcade.move({ action: 'submitText', text })}
+          onSubmitDrawing={(strokes) => arcade.move({ action: 'submitDrawing', strokes })}
+          onReveal={(dir) => arcade.move({ action: 'reveal', dir })}
+        />
+      ) : g && g.kind === 'fishbowl' ? (
+        <FishbowlBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onSubmitWords={(words) => arcade.move({ action: 'submitWords', words })}
+          onStart={() => arcade.move({ action: 'start' })}
+          onCorrect={() => arcade.move({ action: 'correct' })}
+          onSkip={() => arcade.move({ action: 'skip' })}
+        />
+      ) : g && g.kind === 'gofish' ? (
+        <GoFishBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onAsk={(rank) => arcade.move({ action: 'ask', rank })}
+        />
+      ) : g && g.kind === 'oldmaid' ? (
+        <OldMaidBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onDraw={(index) => arcade.move({ action: 'draw', index })}
+        />
+      ) : g && g.kind === 'rps' ? (
+        <RpsBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onThrow={(pick) => arcade.move({ action: 'throw', pick })}
+        />
+      ) : g && g.kind === 'checkers' ? (
+        <CheckersBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onMove={(from, to) => arcade.move({ action: 'move', from, to })}
+        />
       ) : (
         <div className="board-placeholder">
           <span className="big-icon">{info.icon}</span>
@@ -283,9 +354,11 @@ function WaitingLobby({
   const sizeInfo = SIZE_INFO[room.game];
   const [size, setSize] = useState<Size>('medium');
   const [dice, setDice] = useState<1 | 2>(1);
+  const [words, setWords] = useState(3);
 
   const startOptions = (): GameOptions | undefined => {
     if (room.game === 'pig') return { dice };
+    if (room.game === 'fishbowl') return { words };
     if (sizeInfo) return { size };
     return undefined;
   };
@@ -311,6 +384,23 @@ function WaitingLobby({
                 >
                   <b>{key.charAt(0).toUpperCase() + key.slice(1)}</b>
                   <span>{sizeInfo[key]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {room.game === 'fishbowl' && (
+          <div className="size-picker">
+            <span className="field-label">Words per player</span>
+            <div className="size-options">
+              {[2, 3, 4].map((n) => (
+                <button
+                  key={n}
+                  className={`size-btn ${words === n ? 'selected' : ''}`}
+                  onClick={() => setWords(n)}
+                >
+                  <b>{n} Words</b>
+                  <span>{n * room.players.length} in the bowl</span>
                 </button>
               ))}
             </div>
