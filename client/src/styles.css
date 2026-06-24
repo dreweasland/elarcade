@@ -1253,6 +1253,28 @@ body {
   color: var(--text-dim);
   margin: 0;
 }
+/* Rolling-die wind-up (Pig, Can't Stop, Zombie) */
+.rolling {
+  animation: dieShake 0.1s linear infinite;
+}
+.settled {
+  animation: pop 0.18s ease-out;
+}
+@keyframes dieShake {
+  0% {
+    transform: translateY(-2px) rotate(-8deg);
+  }
+  50% {
+    transform: translateY(2px) rotate(8deg);
+  }
+  100% {
+    transform: translateY(-2px) rotate(-8deg);
+  }
+}
+.zd-die.rolling {
+  animation: dieShake 0.1s linear infinite;
+}
+
 .pig-dice {
   display: flex;
   gap: 14px;
@@ -1263,7 +1285,7 @@ body {
   line-height: 1;
   color: var(--neon-cyan);
   filter: drop-shadow(0 0 16px rgba(25, 230, 255, 0.5));
-  animation: pop 0.18s ease-out;
+  display: inline-block;
 }
 .pig-dice.busted .pig-die,
 .pig-dice.wiped .pig-die {
@@ -1852,6 +1874,7 @@ body {
   height: 8px;
   border-radius: 2px;
   transform: translate(-50%, 50%);
+  transition: bottom 0.35s ease;
 }
 .cs-runner {
   position: absolute;
@@ -1864,12 +1887,14 @@ body {
   transform: translate(-50%, 50%);
   box-shadow: 0 0 8px rgba(25, 230, 255, 0.8);
   animation: winpulse 0.8s ease-in-out infinite alternate;
+  transition: bottom 0.4s cubic-bezier(0.34, 1.4, 0.6, 1);
 }
 .cs-dice {
   display: flex;
   gap: 8px;
 }
 .cs-die {
+  display: inline-block;
   font-size: clamp(34px, 11vw, 50px);
   line-height: 1;
   color: var(--neon-cyan);

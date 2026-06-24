@@ -1,6 +1,28 @@
+import { useEffect, useState } from 'react';
 import { PublicPlayer, ZombieDie, ZombieState } from '../../../shared/protocol.ts';
 
 const FACE: Record<ZombieDie['face'], string> = { brain: '🧠', foot: '👣', shotgun: '💥' };
+const FACES: ZombieDie['face'][] = ['brain', 'foot', 'shotgun'];
+
+/** A zombie die that shakes through random faces before settling. */
+function ZombieDieRoll({ die, rollKey }: { die: ZombieDie; rollKey: string }) {
+  const [face, setFace] = useState<ZombieDie['face']>(die.face);
+  const [rolling, setRolling] = useState(false);
+  useEffect(() => {
+    setRolling(true);
+    const iv = window.setInterval(() => setFace(FACES[Math.floor(Math.random() * 3)]), 80);
+    const to = window.setTimeout(() => {
+      clearInterval(iv);
+      setFace(die.face);
+      setRolling(false);
+    }, 520);
+    return () => {
+      clearInterval(iv);
+      clearTimeout(to);
+    };
+  }, [rollKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  return <span className={`zd-die ${die.color} ${rolling ? 'rolling' : ''}`}>{FACE[face]}</span>;
+}
 
 export function ZombieBoard({
   game,
@@ -49,9 +71,11 @@ export function ZombieBoard({
       <div className="zd-rolled">
         {game.rolled ? (
           game.rolled.map((d, i) => (
-            <span key={i} className={`zd-die ${d.color}`} title={`${d.color} ${d.face}`}>
-              {FACE[d.face]}
-            </span>
+            <ZombieDieRoll
+              key={i}
+              die={d}
+              rollKey={`${game.rolled!.map((x) => x.color + x.face).join(',')}-${i}`}
+            />
           ))
         ) : (
           <span className="zd-cup-hint">Roll 3 dice from the cup!</span>

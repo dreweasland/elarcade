@@ -1,6 +1,6 @@
 import { CantStopState, PublicPlayer } from '../../../shared/protocol.ts';
+import { RollingDie } from './RollingDie.tsx';
 
-const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 const SEAT_COLORS = ['#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d'];
 const COLUMNS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
@@ -85,9 +85,7 @@ export function CantStopBoard({
       {game.dice && (
         <div className="cs-dice">
           {game.dice.map((d, i) => (
-            <span key={i} className="cs-die">
-              {DICE[d]}
-            </span>
+            <RollingDie key={i} className="cs-die" value={d} rollKey={`${game.dice!.join(',')}-${i}`} />
           ))}
         </div>
       )}

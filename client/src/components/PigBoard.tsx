@@ -1,6 +1,5 @@
 import { PigState, PublicPlayer } from '../../../shared/protocol.ts';
-
-const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+import { RollingDie } from './RollingDie.tsx';
 
 export function PigBoard({
   game,
@@ -19,7 +18,7 @@ export function PigBoard({
 }) {
   const myTurn = canPlay && game.turn === youId && !game.winner;
   const playerById = (id: string) => players.find((p) => p.id === id);
-  const faces = game.lastRoll ?? Array(game.diceCount).fill(0);
+  const dieCount = game.lastRoll?.length ?? game.diceCount;
 
   return (
     <div className="pig-table">
@@ -44,10 +43,13 @@ export function PigBoard({
         {game.wipedOut ? (
           <span className="pig-die">💀</span>
         ) : (
-          faces.map((d: number, i: number) => (
-            <span key={i} className="pig-die">
-              {d ? DICE[d] : '🎲'}
-            </span>
+          Array.from({ length: dieCount }, (_, i) => (
+            <RollingDie
+              key={i}
+              className="pig-die"
+              value={game.lastRoll ? game.lastRoll[i] : null}
+              rollKey={`${game.moves}-${i}`}
+            />
           ))
         )}
       </div>
