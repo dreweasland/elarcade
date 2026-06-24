@@ -19,6 +19,7 @@ import { GoFishBoard } from './GoFishBoard.tsx';
 import { OldMaidBoard } from './OldMaidBoard.tsx';
 import { RpsBoard } from './RpsBoard.tsx';
 import { CheckersBoard } from './CheckersBoard.tsx';
+import { LudoBoard } from './LudoBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -55,7 +56,8 @@ export function RoomScreen() {
       g?.kind === 'gofish' ||
       g?.kind === 'oldmaid' ||
       g?.kind === 'rps' ||
-      g?.kind === 'checkers'
+      g?.kind === 'checkers' ||
+      g?.kind === 'ludo'
     ) {
       progress = g.moves;
     }
@@ -307,6 +309,15 @@ export function RoomScreen() {
           canPlay={!isSpectator}
           onMove={(from, to) => arcade.move({ action: 'move', from, to })}
         />
+      ) : g && g.kind === 'ludo' ? (
+        <LudoBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onRoll={() => arcade.move({ action: 'roll' })}
+          onMove={(token) => arcade.move({ action: 'move', token })}
+        />
       ) : (
         <div className="board-placeholder">
           <span className="big-icon">{info.icon}</span>
@@ -430,7 +441,7 @@ function WaitingLobby({
   if (!enough) {
     return (
       <p>
-        Share the code below so {info.maxPlayers > 2 ? 'friends' : 'a friend'} can join! (
+        Share the code up top so {info.maxPlayers > 2 ? 'friends' : 'a friend'} can join! (
         {room.players.length}/{info.maxPlayers})
       </p>
     );

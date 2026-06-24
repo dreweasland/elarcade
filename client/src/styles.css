@@ -2731,6 +2731,148 @@ body {
   background: rgba(25, 230, 255, 0.7);
 }
 
+/* Ludo */
+.lu-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.lu-players {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  justify-content: center;
+}
+.lu-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.05);
+}
+.lu-player.turn {
+  border-color: var(--c);
+  box-shadow: 0 0 10px var(--c);
+}
+.lu-player.you .lu-pname {
+  text-decoration: underline;
+}
+.lu-chip {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--c);
+}
+.lu-home {
+  color: var(--text-dim);
+}
+.lu-board {
+  position: relative;
+  width: min(94vw, 460px);
+  aspect-ratio: 1;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  border: 3px solid var(--panel-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1a1030;
+}
+.lu-cell {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+.lu-cell.track {
+  background: #f3ecdb;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  color: #b89b3a;
+}
+.lu-cell.safe {
+  color: #8a7a3a;
+}
+.lu-cell.lane {
+  border: 1px solid rgba(0, 0, 0, 0.18);
+}
+.lu-cell.start {
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  color: rgba(0, 0, 0, 0.4);
+  font-size: 11px;
+}
+.lu-cell.corner {
+  background: var(--c);
+}
+.lu-cell.center {
+  background: #241546;
+}
+.lu-cell.center.goal {
+  font-size: 18px;
+}
+.lu-token {
+  position: absolute;
+  width: 5.4%;
+  height: 5.4%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  padding: 0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+  transition: left 0.4s ease, top 0.4s ease;
+  z-index: 2;
+}
+.lu-token.me {
+  border-color: #fff;
+  box-shadow: 0 0 8px #fff, 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+.lu-token.just {
+  z-index: 3;
+}
+.lu-token.movable {
+  cursor: pointer;
+  animation: lu-pulse 0.9s ease-in-out infinite;
+  z-index: 4;
+}
+@keyframes lu-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.9);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 255, 255, 0);
+  }
+}
+.lu-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.lu-die {
+  font-size: 30px;
+  line-height: 1;
+}
+.lu-bump {
+  font-weight: 800;
+  color: var(--neon-pink);
+}
+.lu-msg {
+  font-weight: 700;
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

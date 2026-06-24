@@ -29,7 +29,8 @@ export type GameId =
   | 'gofish'
   | 'oldmaid'
   | 'rps'
-  | 'checkers';
+  | 'checkers'
+  | 'ludo';
 
 /** Optional config the host can choose in the lobby before starting. */
 export interface GameOptions {
@@ -233,6 +234,15 @@ export const GAMES: Record<GameId, GameInfo> = {
     category: 'strategy',
     minPlayers: 2,
     maxPlayers: 2,
+  },
+  ludo: {
+    id: 'ludo',
+    name: 'Ludo',
+    tagline: 'Roll a 6 to launch, race home, bump rivals back to start!',
+    icon: '🏁',
+    category: 'race',
+    minPlayers: 2,
+    maxPlayers: 4,
   },
 };
 
@@ -806,6 +816,50 @@ export interface CheckersState {
 
 export type CheckersMove = { action: 'move'; from: number; to: number };
 
+// --- Ludo ------------------------------------------------------------------
+
+export type LudoColor = 'red' | 'green' | 'yellow' | 'blue';
+
+/** Shared path geometry (used by both the rules engine and the board render). */
+export const LUDO_RING_LEN = 52; // squares on the common loop
+export const LUDO_LAST_RING_REL = 50; // last loop step before a token turns home
+export const LUDO_HOME_REL = 56; // final home position (exact roll required)
+/** Each colour's entry square as an absolute index on the common loop. */
+export const LUDO_START: Record<LudoColor, number> = { red: 0, green: 13, yellow: 26, blue: 39 };
+/** Absolute loop indices that are "safe" — a token here can't be bumped. */
+export const LUDO_SAFE: number[] = [0, 8, 13, 21, 26, 34, 39, 47];
+
+export interface LudoState {
+  kind: 'ludo';
+  seating: string[];
+  turn: string | null;
+  /** Player id -> colour. */
+  colors: Record<string, LudoColor>;
+  /**
+   * Player id -> the 4 tokens' positions. Each is -1 in base, 0..50 on the
+   * common loop (relative to that colour's start), 51..55 in the home column,
+   * and 56 once home.
+   */
+  tokens: Record<string, number[]>;
+  phase: 'rolling' | 'moving';
+  /** The latest die value (drives the wind-up animation + stays for display). */
+  dice: number | null;
+  /** Bumps to a new key on every roll so the die re-tumbles. */
+  rollId: number;
+  /** During 'moving', the token indices the current player may move. */
+  movable: number[];
+  /** True when the last roll produced no legal move (so the turn passed). */
+  lastRollNoMove: boolean;
+  /** Who just moved a token, for highlighting. */
+  lastMover: string | null;
+  /** A bump that just happened, for the callout + sfx. */
+  lastBump: { victim: LudoColor } | null;
+  winner: string | null;
+  moves: number;
+}
+
+export type LudoMove = { action: 'roll' } | { action: 'move'; token: number };
+
 export type GameState =
   | TicTacToeState
   | ConnectFourState
@@ -823,7 +877,8 @@ export type GameState =
   | GoFishState
   | OldMaidState
   | RpsState
-  | CheckersState;
+  | CheckersState
+  | LudoState;
 export type GameMove =
   | TicTacToeMove
   | ConnectFourMove
@@ -841,7 +896,8 @@ export type GameMove =
   | GoFishMove
   | OldMaidMove
   | RpsMove
-  | CheckersMove;
+  | CheckersMove
+  | LudoMove;
 
 export interface RoomState {
   code: string;

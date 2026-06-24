@@ -16,6 +16,7 @@ import { applyGoFishMove, createGoFish, viewGoFish } from './gofish.js';
 import { applyOldMaidMove, createOldMaid, viewOldMaid } from './oldmaid.js';
 import { applyRpsMove, createRps, viewRps } from './rps.js';
 import { applyCheckersMove, createCheckers } from './checkers.js';
+import { applyLudoMove, createLudo } from './ludo.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -124,5 +125,9 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
   checkers: {
     createState: (ids, first) => createCheckers(ids, first),
     applyMove: (state, playerId, move) => applyCheckersMove(state as any, playerId, move as any),
+  },
+  ludo: {
+    createState: (ids, first) => createLudo(ids, first),
+    applyMove: (state, playerId, move) => applyLudoMove(state as any, playerId, move as any),
   },
 };
