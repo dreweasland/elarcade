@@ -8,6 +8,8 @@ import { applyPigMove, createPig } from './pig.js';
 import { applyDotsMove, createDots } from './dots.js';
 import { applyDrawGuessMove, createDrawGuess, tickDrawGuess, viewDrawGuess } from './drawguess.js';
 import { applyZombieMove, createZombie, viewZombie } from './zombie.js';
+import { applyChutesMove, createChutes } from './chutes.js';
+import { applyCantStopMove, createCantStop } from './cantstop.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -77,5 +79,13 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createZombie(ids, first),
     applyMove: (state, playerId, move) => applyZombieMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewZombie(state as any, viewerId),
+  },
+  chutes: {
+    createState: (ids, first) => createChutes(ids, first),
+    applyMove: (state, playerId, move) => applyChutesMove(state as any, playerId, move as any),
+  },
+  cantstop: {
+    createState: (ids, first) => createCantStop(ids, first),
+    applyMove: (state, playerId, move) => applyCantStopMove(state as any, playerId, move as any),
   },
 };

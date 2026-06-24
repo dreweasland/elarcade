@@ -21,7 +21,9 @@ export type GameId =
   | 'pig'
   | 'dots'
   | 'drawguess'
-  | 'zombie';
+  | 'zombie'
+  | 'chutes'
+  | 'cantstop';
 
 /** Optional config the host can choose in the lobby before starting. */
 export interface GameOptions {
@@ -110,6 +112,22 @@ export const GAMES: Record<GameId, GameInfo> = {
     name: 'Zombie Dice',
     tagline: 'Eat brains, dodge shotguns, push your luck!',
     icon: '🧟',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  chutes: {
+    id: 'chutes',
+    name: 'Chutes & Ladders',
+    tagline: 'Climb ladders, dodge chutes, race to 100!',
+    icon: '🪜',
+    minPlayers: 2,
+    maxPlayers: 4,
+  },
+  cantstop: {
+    id: 'cantstop',
+    name: "Can't Stop",
+    tagline: 'Press your luck up the columns — claim 3 to win!',
+    icon: '🧗',
     minPlayers: 2,
     maxPlayers: 4,
   },
@@ -346,6 +364,62 @@ export interface ZombieState {
 
 export type ZombieMove = { action: 'roll' } | { action: 'bank' };
 
+// --- Chutes & Ladders ------------------------------------------------------
+
+/** Classic board links: square -> destination (ladders up, chutes down). */
+export const CHUTES_BOARD: Record<number, number> = {
+  1: 38, 4: 14, 9: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100, // ladders
+  16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78, // chutes
+};
+
+export interface ChutesState {
+  kind: 'chutes';
+  seating: string[];
+  turn: string | null;
+  positions: Record<string, number>; // 0..100
+  lastRoll: number | null;
+  /** Square the mover started on this turn (for feedback). */
+  lastFrom: number | null;
+  lastVia: 'ladder' | 'chute' | null;
+  winner: string | null;
+  moves: number;
+}
+
+export type ChutesMove = { action: 'roll' };
+
+// --- Can't Stop ------------------------------------------------------------
+
+/** Column heights (number of steps to claim), keyed by the 2-12 dice sum. */
+export const CANTSTOP_HEIGHTS: Record<number, number> = {
+  2: 3, 3: 5, 4: 7, 5: 9, 6: 11, 7: 13, 8: 11, 9: 9, 10: 7, 11: 5, 12: 3,
+};
+
+export interface CantStopState {
+  kind: 'cantstop';
+  seating: string[];
+  turn: string | null;
+  heights: Record<number, number>;
+  /** Permanent progress per player: progress[playerId][col] = steps climbed. */
+  progress: Record<string, Record<number, number>>;
+  /** Claimed columns: col -> playerId. */
+  claimed: Record<number, string>;
+  /** This turn's temporary runner positions: col -> absolute height. */
+  runners: Record<number, number>;
+  phase: 'rolling' | 'choosing';
+  dice: number[] | null;
+  /** Legal advance choices after a roll. */
+  options: Array<{ cols: number[] }> | null;
+  busted: boolean;
+  claimsToWin: number;
+  winner: string | null;
+  moves: number;
+}
+
+export type CantStopMove =
+  | { action: 'roll' }
+  | { action: 'choose'; index: number }
+  | { action: 'stop' };
+
 // --- Dots & Boxes ----------------------------------------------------------
 
 export interface DotsState {
@@ -415,7 +489,9 @@ export type GameState =
   | PigState
   | DotsState
   | DrawGuessState
-  | ZombieState;
+  | ZombieState
+  | ChutesState
+  | CantStopState;
 export type GameMove =
   | TicTacToeMove
   | ConnectFourMove
@@ -425,7 +501,9 @@ export type GameMove =
   | PigMove
   | DotsMove
   | DrawGuessMove
-  | ZombieMove;
+  | ZombieMove
+  | ChutesMove
+  | CantStopMove;
 
 export interface RoomState {
   code: string;

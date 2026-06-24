@@ -11,6 +11,8 @@ import { PigBoard } from './PigBoard.tsx';
 import { DotsBoard } from './DotsBoard.tsx';
 import { DrawGuessBoard } from './DrawGuessBoard.tsx';
 import { ZombieBoard } from './ZombieBoard.tsx';
+import { ChutesBoard } from './ChutesBoard.tsx';
+import { CantStopBoard } from './CantStopBoard.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -39,7 +41,9 @@ export function RoomScreen() {
       g?.kind === 'pig' ||
       g?.kind === 'dots' ||
       g?.kind === 'drawguess' ||
-      g?.kind === 'zombie'
+      g?.kind === 'zombie' ||
+      g?.kind === 'chutes' ||
+      g?.kind === 'cantstop'
     ) {
       progress = g.moves;
     }
@@ -213,6 +217,24 @@ export function RoomScreen() {
           canPlay={!isSpectator}
           onRoll={() => arcade.move({ action: 'roll' })}
           onBank={() => arcade.move({ action: 'bank' })}
+        />
+      ) : g && g.kind === 'chutes' ? (
+        <ChutesBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onRoll={() => arcade.move({ action: 'roll' })}
+        />
+      ) : g && g.kind === 'cantstop' ? (
+        <CantStopBoard
+          game={g}
+          players={room.players}
+          youId={state.youId}
+          canPlay={!isSpectator}
+          onRoll={() => arcade.move({ action: 'roll' })}
+          onChoose={(index) => arcade.move({ action: 'choose', index })}
+          onStop={() => arcade.move({ action: 'stop' })}
         />
       ) : (
         <div className="board-placeholder">
