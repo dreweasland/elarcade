@@ -1728,11 +1728,47 @@ body {
   gap: 12px;
   width: 100%;
 }
+.ch-board-wrap {
+  position: relative;
+  width: min(96vw, 400px);
+}
 .ch-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
   gap: 2px;
-  width: min(96vw, 400px);
+  width: 100%;
+}
+.ch-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+.ch-link {
+  fill: none;
+  stroke-width: 2;
+  opacity: 0.4;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+}
+.ch-link.ladder {
+  stroke: var(--neon-green);
+}
+.ch-link.chute {
+  stroke: var(--neon-pink);
+}
+.ch-link.active {
+  opacity: 1;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 3px currentColor);
+  animation: chlinkpulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes chlinkpulse {
+  to {
+    opacity: 0.5;
+  }
 }
 .ch-cell {
   position: relative;
@@ -1797,11 +1833,23 @@ body {
   align-items: center;
 }
 .ch-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 50px;
   font-size: 15px;
   color: var(--text);
 }
-.ch-status b {
-  color: var(--neon-yellow);
+.ch-die {
+  display: inline-block;
+  font-size: clamp(36px, 11vw, 50px);
+  line-height: 1;
+  color: var(--neon-cyan);
+  filter: drop-shadow(0 0 8px rgba(25, 230, 255, 0.5));
+}
+.ch-feedback {
+  font-size: 15px;
 }
 .ch-win {
   color: var(--neon-green);
