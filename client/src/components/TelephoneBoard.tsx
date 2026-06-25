@@ -57,7 +57,6 @@ export function TelephoneBoard({
   const inGame = game.seating.includes(youId);
   const youSubmitted = game.submitted.includes(youId);
   const total = game.seating.length;
-  const playing = game.phase === 'writing' || game.phase === 'drawing';
 
   // ----- interactive drawing canvas -----
   const canvasRef = useRef<HTMLCanvasElement>(null);

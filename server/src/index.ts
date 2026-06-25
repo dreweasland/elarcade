@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { existsSync } from 'node:fs';
 import express from 'express';
-import { WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 import { RoomManager } from './rooms.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -29,16 +29,28 @@ const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws', maxPayload: MAX_WS_PAYLOAD });
 const rooms = new RoomManager();
 
+// Liveness tracking for the heartbeat (kept off the ws object via a WeakMap).
+const alive = new WeakMap<WebSocket, boolean>();
+
 wss.on('connection', (ws) => {
+  alive.set(ws, true);
+  ws.on('pong', () => alive.set(ws, true));
   ws.on('message', (data) => rooms.handleMessage(ws, data.toString()));
   ws.on('close', () => rooms.handleClose(ws));
   ws.on('error', () => rooms.handleClose(ws));
 });
 
-// Keep-alive ping so idle WebSockets (and proxies) don't silently drop.
+// Keep-alive: ping every 30s AND reap connections that stopped answering, so a
+// client that vanished without a TCP close (sleep, Wi-Fi drop, NAT timeout)
+// doesn't hold its seat as a ghost. terminate() fires 'close' -> handleClose.
 const heartbeat = setInterval(() => {
   for (const ws of wss.clients) {
-    if (ws.readyState === ws.OPEN) ws.ping();
+    if (alive.get(ws) === false) {
+      ws.terminate();
+      continue;
+    }
+    alive.set(ws, false);
+    ws.ping();
   }
 }, 30_000);
 wss.on('close', () => clearInterval(heartbeat));

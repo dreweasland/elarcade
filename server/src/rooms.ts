@@ -2,7 +2,6 @@ import type { WebSocket } from 'ws';
 import {
   AVATARS,
   DEFAULT_AVATAR,
-  DrawGuessState,
   DrawStroke,
   GameId,
   GameMove,
@@ -272,8 +271,10 @@ export class RoomManager {
   }
 
   private relayToOthers(room: Room, fromId: string, msg: ServerMessage): void {
-    for (const p of room.players) if (p.ws && p.id !== fromId) this.send(p.ws, msg);
-    for (const s of room.spectators) this.send(s, msg);
+    // Hottest path in the app (live drawing ~20 msgs/sec) — serialize once.
+    const data = JSON.stringify(msg);
+    for (const p of room.players) if (p.ws && p.id !== fromId) this.sendRaw(p.ws, data);
+    for (const s of room.spectators) this.sendRaw(s, data);
   }
 
   private startGameTimer(room: Room): void {
@@ -487,17 +488,23 @@ export class RoomManager {
     this.scheduleBots(room); // in case a bot moves first
   }
 
-  /** Loser of the last round goes first; on a draw or first game, alternate. */
+  /**
+   * Two-player head-to-head: the loser of the last round goes first (catch-up).
+   * Otherwise rotate the starting seat so the first move cycles through every
+   * player across rematches (not just the first two seats).
+   */
   private pickFirstPlayer(room: Room): string {
     const ids = room.players.map((p) => p.id);
     const prev = room.gameState;
-    if (prev && prev.winner && prev.winner !== 'draw') {
+
+    if (ids.length === 2 && prev?.winner && prev.winner !== 'draw') {
       const loser = ids.find((id) => id !== prev.winner);
       if (loser) return loser;
     }
+
     if (room.lastFirstPlayerId) {
-      const other = ids.find((id) => id !== room.lastFirstPlayerId);
-      if (other) return other;
+      const i = ids.indexOf(room.lastFirstPlayerId);
+      if (i >= 0) return ids[(i + 1) % ids.length];
     }
     return ids[0];
   }

@@ -171,10 +171,9 @@ function sanitizeStrokes(strokes: DrawStroke[] | undefined): DrawStroke[] {
 // ---------------------------------------------------------------------------
 
 export function viewTelephone(state: TelephoneState, viewerId: string | null): TelephoneState {
-  const view: TelephoneState = structuredClone(state);
-  view.youRespondTo = null;
-
   if (state.phase === 'reveal') {
+    const view: TelephoneState = structuredClone(state);
+    view.youRespondTo = null;
     view.albums = state.albums.map((album, idx) => {
       if (idx < state.revealAlbum) return album; // fully shown already
       if (idx === state.revealAlbum) return album.slice(0, state.revealPage); // in progress
@@ -182,15 +181,25 @@ export function viewTelephone(state: TelephoneState, viewerId: string | null): T
     });
     return view;
   }
-  if (state.phase === 'over') return view; // all albums public once it's a wrap
-
-  // Active play: hide every chain, surface only this viewer's current prompt.
-  const n = state.seating.length;
-  view.albums = state.seating.map(() => [] as TelephonePage[]);
-  const seatIndex = viewerId ? state.seating.indexOf(viewerId) : -1;
-  if (seatIndex >= 0 && state.round > 0) {
-    const albumIdx = albumHeldBy(seatIndex, state.round, n);
-    view.youRespondTo = state.albums[albumIdx][state.round - 1] ?? null;
+  if (state.phase === 'over') {
+    // All albums public once it's a wrap.
+    const view: TelephoneState = structuredClone(state);
+    view.youRespondTo = null;
+    return view;
   }
-  return view;
+
+  // Active play (the per-second tick hot path): hide every chain and surface
+  // only this viewer's prompt — without deep-cloning the discarded albums. The
+  // view is read-only (serialized then dropped), so sharing the rest is safe.
+  const n = state.seating.length;
+  const seatIndex = viewerId ? state.seating.indexOf(viewerId) : -1;
+  const youRespondTo =
+    seatIndex >= 0 && state.round > 0
+      ? state.albums[albumHeldBy(seatIndex, state.round, n)][state.round - 1] ?? null
+      : null;
+  return {
+    ...state,
+    albums: state.seating.map(() => [] as TelephonePage[]),
+    youRespondTo,
+  };
 }

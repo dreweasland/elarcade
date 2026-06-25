@@ -1,4 +1,5 @@
 import { DotsMove, DotsState, GameOptions } from '../../../shared/protocol.js';
+import { highestScorer } from './score.js';
 
 const SIZES: Record<NonNullable<GameOptions['size']>, { rows: number; cols: number }> = {
   small: { rows: 3, cols: 3 },
@@ -91,7 +92,7 @@ export function applyDotsMove(state: DotsState, playerId: string, move: DotsMove
   next.moves++;
 
   if (next.owners.every((o) => o !== null)) {
-    next.winner = decideWinner(next);
+    next.winner = highestScorer(next.seating, next.scores);
     next.turn = null;
   } else if (completed === 0) {
     // No box completed → turn passes. Completing a box earns another turn.
@@ -114,17 +115,3 @@ function nextPlayer(state: DotsState, fromId: string): string {
   return state.seating[(idx + 1) % state.seating.length];
 }
 
-function decideWinner(state: DotsState): string | 'draw' {
-  let best = -1;
-  let winners: string[] = [];
-  for (const id of state.seating) {
-    const s = state.scores[id] ?? 0;
-    if (s > best) {
-      best = s;
-      winners = [id];
-    } else if (s === best) {
-      winners.push(id);
-    }
-  }
-  return winners.length === 1 ? winners[0] : 'draw';
-}

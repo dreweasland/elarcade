@@ -1,4 +1,5 @@
 import { DrawGuessMove, DrawGuessState } from '../../../shared/protocol.js';
+import { highestScorer } from './score.js';
 
 const ROUND_SECONDS = 75;
 const REVEAL_SECONDS = 6;
@@ -120,7 +121,7 @@ function advanceRound(state: DrawGuessState): void {
   const nextRound = state.round + 1;
   if (nextRound >= state.totalRounds) {
     state.phase = 'over';
-    state.winner = decideWinner(state);
+    state.winner = highestScorer(state.seating, state.scores);
     state.secondsLeft = 0;
     return;
   }
@@ -136,20 +137,6 @@ function advanceRound(state: DrawGuessState): void {
   state.wordLength = word.replace(/ /g, '').length;
 }
 
-function decideWinner(state: DrawGuessState): string | 'draw' {
-  let best = -1;
-  let winners: string[] = [];
-  for (const id of state.seating) {
-    const s = state.scores[id] ?? 0;
-    if (s > best) {
-      best = s;
-      winners = [id];
-    } else if (s === best) {
-      winners.push(id);
-    }
-  }
-  return winners.length === 1 ? winners[0] : 'draw';
-}
 
 function pushChat(state: DrawGuessState, entry: Omit<DrawGuessState['chat'][number], 'id'>): void {
   state.chat.push({ id: `ch${state.moves}-${state.chat.length}`, ...entry });

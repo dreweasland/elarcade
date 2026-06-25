@@ -93,7 +93,6 @@ export function RoomScreen() {
   }
 
   const info = GAMES[room.game];
-  const you = room.players.find((p) => p.id === state.youId);
   const isSpectator = state.role === 'spectator';
   const g = room.gameState;
 

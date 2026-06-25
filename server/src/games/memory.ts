@@ -1,4 +1,5 @@
 import { GameOptions, MemoryCard, MemoryMove, MemoryState } from '../../../shared/protocol.js';
+import { highestScorer } from './score.js';
 
 // A pool of distinct, kid-friendly faces — needs >= 18 for the large board.
 const FACES = [
@@ -103,7 +104,7 @@ export function applyMemoryMove(
     next.lastResult = 'match';
 
     if (next.cards.every((c) => c.matchedBy)) {
-      next.winner = decideWinner(next);
+      next.winner = highestScorer(next.seating, next.scores);
       next.turn = null;
     }
     // Match → same player goes again (turn unchanged).
@@ -123,20 +124,6 @@ function nextPlayer(state: MemoryState, fromId: string): string {
 }
 
 /** Most pairs wins; a tie for the lead is a draw. */
-function decideWinner(state: MemoryState): string | 'draw' {
-  let best = -1;
-  let winners: string[] = [];
-  for (const id of state.seating) {
-    const s = state.scores[id] ?? 0;
-    if (s > best) {
-      best = s;
-      winners = [id];
-    } else if (s === best) {
-      winners.push(id);
-    }
-  }
-  return winners.length === 1 ? winners[0] : 'draw';
-}
 
 /** Hide the faces of cards that aren't currently face-up or matched. */
 export function viewMemory(state: MemoryState, _viewerId: string | null): MemoryState {

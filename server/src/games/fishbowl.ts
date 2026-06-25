@@ -136,13 +136,13 @@ export function tickFishbowl(state: FishbowlState): { state: FishbowlState; chan
 // ---------------------------------------------------------------------------
 
 export function viewFishbowl(state: FishbowlState, viewerId: string | null): FishbowlState {
-  const view: FishbowlState = structuredClone(state);
+  // Runs per player every tick — shallow-copy and drop the server-only fields
+  // rather than deep-cloning the whole state. View is read-only (serialized).
+  const showWord = state.phase === 'clue' && viewerId !== null && viewerId === state.clueGiver;
+  const view: FishbowlState = { ...state, currentWord: showWord ? state.currentWord : null };
   delete view.bowl;
   delete view.allWords;
   delete view.pending;
-  if (!(state.phase === 'clue' && viewerId !== null && viewerId === state.clueGiver)) {
-    view.currentWord = null;
-  }
   return view;
 }
 
