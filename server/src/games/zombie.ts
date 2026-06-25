@@ -36,6 +36,7 @@ export function createZombie(playerIds: string[], firstPlayerId: string): Zombie
     shotguns: 0,
     kept: [],
     rolled: null,
+    lastRoller: null,
     cupCount: 13,
     busted: false,
     target: TARGET,
@@ -73,6 +74,7 @@ export function applyZombieMove(state: ZombieState, playerId: string, move: Zomb
 
   // action === 'roll'
   next.busted = false;
+  next.lastRoller = playerId;
   const cup = next.cup!;
   const usedBrains = next.usedBrains!;
 

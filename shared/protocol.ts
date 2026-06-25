@@ -442,6 +442,8 @@ export interface PigState {
   diceCount: number;
   /** The dice faces just rolled (length 1 or 2), or null. */
   lastRoll: number[] | null;
+  /** Who rolled last — so the UI can hold the turn on them while dice settle. */
+  lastRoller: string | null;
   /** True when the last roll busted the turn (a single 1). */
   busted: boolean;
   /** Two-dice only: true when double 1s wiped the player's whole score. */
@@ -477,6 +479,8 @@ export interface ZombieState {
   kept: ZombieDie[];
   /** The dice from the last roll, for display. */
   rolled: ZombieDie[] | null;
+  /** Who rolled last — so the UI can hold the turn on them while dice settle. */
+  lastRoller: string | null;
   /** How many dice remain in the cup. */
   cupCount: number;
   /** True when the last roll was a third shotgun (turn lost). */
@@ -537,6 +541,8 @@ export interface CantStopState {
   runners: Record<number, number>;
   phase: 'rolling' | 'choosing';
   dice: number[] | null;
+  /** Who rolled last — so the UI can hold the turn on them while dice settle. */
+  lastRoller: string | null;
   /** Legal advance choices after a roll. */
   options: Array<{ cols: number[] }> | null;
   busted: boolean;

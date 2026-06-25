@@ -1285,6 +1285,11 @@ body {
   gap: 12px;
   width: 100%;
 }
+.pig-turn-banner {
+  margin: 0;
+  font-weight: 800;
+  text-align: center;
+}
 .pig-scores {
   display: flex;
   gap: 10px;

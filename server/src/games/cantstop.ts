@@ -16,6 +16,7 @@ export function createCantStop(playerIds: string[], firstPlayerId: string): Cant
     runners: {},
     phase: 'rolling',
     dice: null,
+    lastRoller: null,
     options: null,
     busted: false,
     claimsToWin: CLAIMS_TO_WIN,
@@ -43,6 +44,7 @@ export function applyCantStopMove(
     if (next.phase !== 'rolling') return { state, error: 'Resolve your roll first.' };
     next.moves++;
     next.busted = false;
+    next.lastRoller = playerId;
     const dice = Array.from({ length: 4 }, () => 1 + Math.floor(Math.random() * 6));
     next.dice = dice;
     const options = generateOptions(next, playerId, dice);

@@ -16,18 +16,31 @@ export function PigBoard({
   onRoll: () => void;
   onHold: () => void;
 }) {
-  const myTurn = canPlay && game.turn === youId && !game.winner;
   const playerById = (id: string) => players.find((p) => p.id === id);
   const dieCount = game.lastRoll?.length ?? game.diceCount;
   const rolling = useDiceReveal(game.lastRoll ? String(game.moves) : null);
+  // Hold the turn indicator on whoever just rolled until the dice settle, so
+  // a bust shows before the turn appears to pass.
+  const shownTurn = rolling && game.lastRoller ? game.lastRoller : game.turn;
+  const myTurn = canPlay && game.turn === youId && !game.winner && !rolling;
+
+  const turnP = playerById(shownTurn ?? '');
+  const turnText = game.winner
+    ? ''
+    : !canPlay
+      ? `${turnP?.avatar ?? ''} ${turnP?.name ?? ''}'s turn`
+      : shownTurn === youId
+        ? 'Your turn!'
+        : `${turnP?.avatar ?? ''} ${turnP?.name ?? 'Opponent'}'s turn`;
 
   return (
     <div className="pig-table">
+      {turnText && <p className="pig-turn-banner">{turnText}</p>}
       <div className="pig-scores">
         {game.seating.map((id) => {
           const p = playerById(id);
           return (
-            <div key={id} className={`pig-score ${game.turn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
+            <div key={id} className={`pig-score ${shownTurn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
               <span className="pig-score-avatar">{p?.avatar}</span>
               <span className="pig-score-name">{p?.name}</span>
               <span className="pig-score-num">{game.scores[id] ?? 0}</span>

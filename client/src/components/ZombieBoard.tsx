@@ -40,17 +40,28 @@ export function ZombieBoard({
   onRoll: () => void;
   onBank: () => void;
 }) {
-  const myTurn = canPlay && game.turn === youId && !game.winner;
   const playerById = (id: string) => players.find((p) => p.id === id);
   const rolling = useDiceReveal(game.rolled ? String(game.moves) : null, 600);
+  // Hold the turn indicator on whoever just rolled until the dice settle, so a
+  // bust shows before the turn appears to pass.
+  const shownTurn = rolling && game.lastRoller ? game.lastRoller : game.turn;
+  const myTurn = canPlay && game.turn === youId && !game.winner && !rolling;
+
+  const turnP = playerById(shownTurn ?? '');
+  const turnText = game.winner
+    ? ''
+    : canPlay && shownTurn === youId
+      ? 'Your turn!'
+      : `${turnP?.avatar ?? ''} ${turnP?.name ?? 'Opponent'}'s turn`;
 
   return (
     <div className="zd-table">
+      {turnText && <p className="pig-turn-banner">{turnText}</p>}
       <div className="zd-scores">
         {game.seating.map((id) => {
           const p = playerById(id);
           return (
-            <div key={id} className={`zd-score ${game.turn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
+            <div key={id} className={`zd-score ${shownTurn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
               <span className="zd-score-avatar">{p?.avatar}</span>
               <span className="zd-score-name">{p?.name}</span>
               <span className="zd-score-num">🧠 {game.scores[id] ?? 0}</span>

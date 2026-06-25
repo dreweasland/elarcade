@@ -107,7 +107,13 @@ export function RoomScreen() {
   } else if (
     room.status === 'playing' &&
     g &&
-    (g.kind === 'drawguess' || g.kind === 'telephone' || g.kind === 'fishbowl' || g.kind === 'rps')
+    (g.kind === 'drawguess' ||
+      g.kind === 'telephone' ||
+      g.kind === 'fishbowl' ||
+      g.kind === 'rps' ||
+      g.kind === 'pig' ||
+      g.kind === 'zombie' ||
+      g.kind === 'cantstop')
   ) {
     banner = ''; // its own board shows round / timer / status
   } else if (room.status === 'playing' && g) {

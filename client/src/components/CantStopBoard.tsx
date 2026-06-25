@@ -27,19 +27,32 @@ export function CantStopBoard({
   onChoose: (index: number) => void;
   onStop: () => void;
 }) {
-  const myTurn = canPlay && game.turn === youId && !game.winner;
   const colorOf = (id: string) => SEAT_COLORS[game.seating.indexOf(id) % SEAT_COLORS.length];
   const hasRunners = Object.keys(game.runners).length > 0;
   const rolling = useDiceReveal(game.dice ? game.dice.join(',') : null);
+  // Hold the turn indicator on whoever just rolled until the dice settle, so a
+  // bust shows before the turn appears to pass.
+  const shownTurn = rolling && game.lastRoller ? game.lastRoller : game.turn;
+  // Action buttons below are already gated by the inner `rolling` check, so a
+  // bust reveal can't be clicked through.
+  const myTurn = canPlay && game.turn === youId && !game.winner;
+
+  const turnP = players.find((pl) => pl.id === (shownTurn ?? ''));
+  const turnText = game.winner
+    ? ''
+    : canPlay && shownTurn === youId
+      ? 'Your turn!'
+      : `${turnP?.avatar ?? ''} ${turnP?.name ?? 'Opponent'}'s turn`;
 
   return (
     <div className="cs-table">
+      {turnText && <p className="pig-turn-banner">{turnText}</p>}
       <div className="cs-legend">
         {game.seating.map((id) => {
           const p = players.find((pl) => pl.id === id);
           const claims = Object.values(game.claimed).filter((c) => c === id).length;
           return (
-            <span key={id} className={`cs-leg ${game.turn === id ? 'turn' : ''}`}>
+            <span key={id} className={`cs-leg ${shownTurn === id ? 'turn' : ''}`}>
               <span className="cs-dot" style={{ background: colorOf(id) }} />
               {p?.avatar} {claims}/{game.claimsToWin} 👑
             </span>

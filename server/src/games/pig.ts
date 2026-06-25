@@ -17,6 +17,7 @@ export function createPig(
     turnTotal: 0,
     diceCount: options?.dice === 2 ? 2 : 1,
     lastRoll: null,
+    lastRoller: null,
     busted: false,
     wipedOut: false,
     target: TARGET,
@@ -44,6 +45,7 @@ export function applyPigMove(state: PigState, playerId: string, move: PigMove): 
   if (move.action === 'roll') {
     const roll = Array.from({ length: next.diceCount }, die);
     next.lastRoll = roll;
+    next.lastRoller = playerId;
     const ones = roll.filter((d) => d === 1).length;
 
     if (next.diceCount === 2 && ones === 2) {
@@ -68,6 +70,7 @@ export function applyPigMove(state: PigState, playerId: string, move: PigMove): 
     next.scores[playerId] = (next.scores[playerId] ?? 0) + next.turnTotal;
     next.turnTotal = 0;
     next.lastRoll = null;
+    next.lastRoller = null;
     if (next.scores[playerId] >= next.target) {
       next.winner = playerId;
       next.turn = null;
