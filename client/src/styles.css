@@ -94,13 +94,19 @@ body {
 }
 
 .mute-btn {
-  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neon-cyan);
   background: var(--panel);
   border: 1px solid var(--panel-border);
   border-radius: 12px;
   width: 48px;
   height: 48px;
   cursor: pointer;
+}
+.mute-btn:hover {
+  color: var(--neon-pink);
 }
 
 .stage {
