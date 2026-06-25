@@ -107,8 +107,8 @@ export function ChutesBoard({
   const atStart = players.filter((p) => displayPos(p.id) === 0);
 
   let feedback = '';
-  if (anim?.via === 'ladder') feedback = '🪜 Up a ladder!';
-  else if (anim?.via === 'chute') feedback = '🛝 Down a chute!';
+  if (anim?.via === 'ladder') feedback = 'Up a ladder!';
+  else if (anim?.via === 'chute') feedback = 'Down a chute!';
   else if (game.lastRoll == null) feedback = 'Roll to move!';
 
   const winner = players.find((p) => p.id === (game.winner ?? null));
@@ -143,8 +143,6 @@ export function ChutesBoard({
           return (
             <div key={sq} className={`ch-cell ${kind}`}>
               <span className="ch-num">{sq}</span>
-              {kind === 'ladder' && <span className="ch-icon">🪜</span>}
-              {kind === 'chute' && <span className="ch-icon">🛝</span>}
               {here.length > 0 && (
                 <span className="ch-tokens">
                   {here.map((p) => (
@@ -176,12 +174,12 @@ export function ChutesBoard({
         {feedback && <span className="ch-feedback">{feedback}</span>}
       </div>
 
-      {game.winner && winner && <p className="ch-win">{winner.avatar} reached 100! 🎉</p>}
+      {game.winner && winner && <p className="ch-win">{winner.avatar} reached 100!</p>}
 
       {canPlay && (
         <div className="room-actions">
           <button className="btn primary big" disabled={!myTurn} onClick={onRoll}>
-            {anim ? 'Moving…' : '🎲 Roll'}
+            {anim ? 'Moving…' : 'Roll'}
           </button>
         </div>
       )}

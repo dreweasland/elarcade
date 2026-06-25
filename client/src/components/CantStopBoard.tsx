@@ -54,7 +54,7 @@ export function CantStopBoard({
           return (
             <span key={id} className={`cs-leg ${shownTurn === id ? 'turn' : ''}`}>
               <span className="cs-dot" style={{ background: colorOf(id) }} />
-              {p?.avatar} {claims}/{game.claimsToWin} 👑
+              {p?.avatar} {claims}/{game.claimsToWin}
             </span>
           );
         })}
@@ -68,7 +68,7 @@ export function CantStopBoard({
           return (
             <div key={col} className={`cs-col ${claimer ? 'claimed' : ''}`}>
               <span className="cs-col-num" style={claimer ? { color: colorOf(claimer) } : undefined}>
-                {claimer ? '👑' : col}
+                {claimer ? '✓' : col}
               </span>
               <div className="cs-track">
                 {!claimer &&
@@ -105,13 +105,13 @@ export function CantStopBoard({
       )}
 
       {!rolling && game.busted && (
-        <p className="pig-bust-text">💥 Busted! No legal move — turn lost.</p>
+        <p className="pig-bust-text">Busted! No legal move — turn lost.</p>
       )}
 
       {canPlay && myTurn && (
         <>
           {rolling ? (
-            <p className="cs-prompt">🎲 Rolling…</p>
+            <p className="cs-prompt">Rolling…</p>
           ) : game.phase === 'choosing' && game.options ? (
             <div className="cs-options">
               <span className="cs-prompt">Pick your advance:</span>
@@ -124,10 +124,10 @@ export function CantStopBoard({
           ) : (
             <div className="room-actions">
               <button className="btn primary big" onClick={onRoll}>
-                🎲 Roll
+                Roll
               </button>
               <button className="btn ghost" disabled={!hasRunners} onClick={onStop}>
-                ✋ Stop &amp; bank
+                Stop &amp; bank
               </button>
             </div>
           )}

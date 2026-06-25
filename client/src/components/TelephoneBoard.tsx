@@ -121,11 +121,11 @@ export function TelephoneBoard({
   const phaseLabel =
     game.phase === 'writing'
       ? game.round === 0
-        ? '✍️ Write a starter'
-        : '💬 Caption it'
+        ? 'Write a starter'
+        : 'Caption it'
       : game.phase === 'drawing'
-        ? '✏️ Draw it'
-        : '📖 The Big Reveal';
+        ? 'Draw it'
+        : 'The Big Reveal';
 
   // ---------------------------------------------------------------- reveal --
   if (game.phase === 'reveal' || game.phase === 'over') {
@@ -139,7 +139,7 @@ export function TelephoneBoard({
     return (
       <div className="tp-board">
         <div className="tp-reveal-head">
-          <span className="tp-reveal-title">📖 The Big Reveal</span>
+          <span className="tp-reveal-title">The Big Reveal</span>
           {game.phase === 'reveal' && (
             <span className="tp-reveal-progress">
               Album {game.revealAlbum + 1}/{game.albums.length}
@@ -177,13 +177,13 @@ export function TelephoneBoard({
                 ◀ Back
               </button>
               <button className="btn primary" onClick={() => onReveal('next')}>
-                {atEnd ? 'Finish 🎉' : 'Next ▶'}
+                {atEnd ? 'Finish' : 'Next ▶'}
               </button>
             </div>
           ) : (
-            <p className="tp-watching">👀 {nameOf(hostId)} is running the reveal…</p>
+            <p className="tp-watching">{nameOf(hostId)} is running the reveal…</p>
           ))}
-        {game.phase === 'over' && <p className="tp-fin">🎬 That's a wrap! Play again for new chaos.</p>}
+        {game.phase === 'over' && <p className="tp-fin">That's a wrap! Play again for new chaos.</p>}
       </div>
     );
   }
@@ -197,7 +197,7 @@ export function TelephoneBoard({
       <span className="tp-phase">{phaseLabel}</span>
       <span className={`tp-timer ${game.secondsLeft <= 10 ? 'low' : ''}`}>⏱ {game.secondsLeft}s</span>
       <span className="tp-count">
-        ✅ {game.submitted.length}/{total}
+        {game.submitted.length}/{total} in
       </span>
     </div>
   );
@@ -208,7 +208,7 @@ export function TelephoneBoard({
       <div className="tp-board">
         {header}
         <p className="tp-waiting">
-          {game.phase === 'writing' ? '✍️ Players are writing…' : '✏️ Players are drawing…'}
+          {game.phase === 'writing' ? 'Players are writing…' : 'Players are drawing…'}
         </p>
       </div>
     );
@@ -218,7 +218,7 @@ export function TelephoneBoard({
     return (
       <div className="tp-board">
         {header}
-        <p className="tp-done">✅ Locked in! Waiting for the rest… ({game.submitted.length}/{total})</p>
+        <p className="tp-done">Locked in! Waiting for the rest… ({game.submitted.length}/{total})</p>
       </div>
     );
   }
@@ -300,7 +300,7 @@ export function TelephoneBoard({
           ))}
         </div>
         <button className="btn ghost small" onClick={clearCanvas}>
-          🗑 Clear
+          Clear
         </button>
       </div>
       <button

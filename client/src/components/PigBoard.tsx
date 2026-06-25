@@ -68,7 +68,7 @@ export function PigBoard({
         {rolling ? (
           <span className="pig-rolling">Rolling…</span>
         ) : game.wipedOut ? (
-          <span className="pig-bust-text">💀 Snake eyes! Whole score wiped!</span>
+          <span className="pig-bust-text">Snake eyes! Whole score wiped!</span>
         ) : game.busted ? (
           <span className="pig-bust-text">Busted! Rolled a 1 — turn lost</span>
         ) : (
@@ -81,10 +81,10 @@ export function PigBoard({
       {canPlay && (
         <div className="room-actions">
           <button className="btn primary big" disabled={!myTurn} onClick={onRoll}>
-            🎲 Roll
+            Roll
           </button>
           <button className="btn ghost" disabled={!myTurn || game.turnTotal === 0} onClick={onHold}>
-            ✋ Hold ({game.turnTotal})
+            Hold ({game.turnTotal})
           </button>
         </div>
       )}

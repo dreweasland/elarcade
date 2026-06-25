@@ -4,10 +4,10 @@ import { FishbowlRound, FishbowlState, PublicPlayer } from '../../../shared/prot
 const TEAM_LABELS: [string, string] = ['Team Coral', 'Team Aqua'];
 const TEAM_CLASS: [string, string] = ['coral', 'aqua'];
 
-const ROUND_INFO: Record<FishbowlRound, { name: string; how: string; emoji: string }> = {
-  describe: { name: 'Describe', how: 'Say anything except the word(s) on the card.', emoji: '🗣️' },
-  oneword: { name: 'One Word', how: 'Give a single-word clue — that’s it.', emoji: '☝️' },
-  charades: { name: 'Charades', how: 'Act it out — no talking, no sounds!', emoji: '🎭' },
+const ROUND_INFO: Record<FishbowlRound, { name: string; how: string }> = {
+  describe: { name: 'Describe', how: 'Say anything except the word(s) on the card.' },
+  oneword: { name: 'One Word', how: 'Give a single-word clue — that’s it.' },
+  charades: { name: 'Charades', how: 'Act it out — no talking, no sounds!' },
 };
 
 export function FishbowlBoard({
@@ -63,9 +63,9 @@ export function FishbowlBoard({
     if (!canPlay || !inGame) {
       return (
         <div className="fb-board">
-          <p className="fb-phase-title">🐠 Filling the bowl…</p>
+          <p className="fb-phase-title">Filling the bowl…</p>
           <p className="fb-wait">
-            ✍️ {game.submitted.length}/{game.seating.length} players have tossed in their words.
+            {game.submitted.length}/{game.seating.length} players have tossed in their words.
           </p>
         </div>
       );
@@ -73,9 +73,9 @@ export function FishbowlBoard({
     if (youSubmitted) {
       return (
         <div className="fb-board">
-          <p className="fb-phase-title">🐠 Filling the bowl…</p>
+          <p className="fb-phase-title">Filling the bowl…</p>
           <p className="fb-done">
-            ✅ Your words are in! Waiting for the rest… ({game.submitted.length}/{game.seating.length})
+            Your words are in! Waiting for the rest… ({game.submitted.length}/{game.seating.length})
           </p>
         </div>
       );
@@ -83,7 +83,7 @@ export function FishbowlBoard({
     const ready = words.every((w) => w.trim());
     return (
       <div className="fb-board">
-        <p className="fb-phase-title">🐠 Fill the bowl</p>
+        <p className="fb-phase-title">Fill the bowl</p>
         <p className="fb-prompt">
           Secretly add {game.wordsPerPlayer} words or names — people, places, things, anything fun.
         </p>
@@ -108,7 +108,7 @@ export function FishbowlBoard({
             Toss them in ▶
           </button>
         </form>
-        <p className="fb-hint">🤫 Only you can see your words.</p>
+        <p className="fb-hint">Only you can see your words.</p>
       </div>
     );
   }
@@ -117,10 +117,10 @@ export function FishbowlBoard({
   if (game.phase === 'over') {
     const [a, b] = game.scores;
     const result =
-      a === b ? "🤝 It's a tie!" : `🏆 ${TEAM_LABELS[a > b ? 0 : 1]} wins!`;
+      a === b ? "It's a tie!" : `${TEAM_LABELS[a > b ? 0 : 1]} wins!`;
     return (
       <div className="fb-board">
-        <p className="fb-phase-title">🎬 That's a wrap!</p>
+        <p className="fb-phase-title">That's a wrap!</p>
         {scoreboard}
         <p className="fb-result">{result}</p>
         <p className="fb-hint">Play again to fill a fresh bowl.</p>
@@ -134,11 +134,11 @@ export function FishbowlBoard({
       {scoreboard}
       <div className="fb-roundline">
         <span className="fb-round">Round {game.round + 1}/3</span>
-        <span className="fb-roundname">{round.emoji} {round.name}</span>
+        <span className="fb-roundname">{round.name}</span>
         {game.phase === 'clue' && (
           <span className={`fb-timer ${game.secondsLeft <= 10 ? 'low' : ''}`}>⏱ {game.secondsLeft}s</span>
         )}
-        <span className="fb-bowl">🐠 {game.bowlCount} left</span>
+        <span className="fb-bowl">{game.bowlCount} left</span>
       </div>
       <p className="fb-how">{round.how}</p>
     </div>
@@ -181,7 +181,7 @@ export function FishbowlBoard({
             ↪ Skip
           </button>
           <button className="btn primary big" onClick={onCorrect}>
-            ✅ Got it!
+            Got it!
           </button>
         </div>
         <p className="fb-turncount">Got {game.turnCorrect} this turn</p>
@@ -194,11 +194,11 @@ export function FishbowlBoard({
       {header}
       {onActiveTeam ? (
         <p className="fb-guess">
-          🗣️ Guess out loud! {avatarOf(game.clueGiver)} {nameOf(game.clueGiver)} is giving clues.
+          Guess out loud! {avatarOf(game.clueGiver)} {nameOf(game.clueGiver)} is giving clues.
         </p>
       ) : (
         <p className="fb-wait">
-          👀 {teamBadge(game.activeTeam)} is up — {nameOf(game.clueGiver)} is giving clues.
+          {teamBadge(game.activeTeam)} is up — {nameOf(game.clueGiver)} is giving clues.
         </p>
       )}
       <p className="fb-turncount">Got {game.turnCorrect} this turn</p>

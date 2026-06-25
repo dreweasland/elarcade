@@ -124,11 +124,7 @@ export function LudoBoard({
       }
       if (center) {
         const isGoal = r === 7 && c === 7;
-        cells.push(
-          <div key={k} className={`lu-cell center ${isGoal ? 'goal' : ''}`}>
-            {isGoal ? '🏁' : ''}
-          </div>,
-        );
+        cells.push(<div key={k} className={`lu-cell center ${isGoal ? 'goal' : ''}`} />);
         continue;
       }
       if (corner) {
@@ -185,7 +181,7 @@ export function LudoBoard({
     if (game.lastRollNoMove && game.dice != null) {
       status = `Rolled ${game.dice} — no moves. ${myTurn ? 'Your' : `${nameOf(game.turn)}'s`} turn.`;
     } else if (myTurn && game.phase === 'moving') {
-      status = '✨ Tap a glowing token to move it!';
+      status = 'Tap a glowing token to move it!';
     } else if (myTurn) {
       status = game.tokens[youId]?.every((t) => t === -1)
         ? 'Roll a 6 to launch a token!'
@@ -208,7 +204,7 @@ export function LudoBoard({
             >
               <span className="lu-chip" />
               <span className="lu-pname">{avatarOf(pid)} {nameOf(pid)}</span>
-              <span className="lu-home">{home}/4 🏠</span>
+              <span className="lu-home">{home}/4 home</span>
             </div>
           );
         })}
@@ -221,14 +217,14 @@ export function LudoBoard({
 
       <div className="lu-status">
         <RollingDie className="lu-die" value={game.dice} rollKey={String(game.rollId)} />
-        {game.lastBump && <span className="lu-bump">💥 Bump!</span>}
+        {game.lastBump && <span className="lu-bump">Bump!</span>}
         {status && <span className="lu-msg">{status}</span>}
       </div>
 
       {canPlay && !game.winner && game.phase === 'rolling' && (
         <div className="room-actions">
           <button className="btn primary big" disabled={!myTurn} onClick={onRoll}>
-            🎲 Roll
+            Roll
           </button>
         </div>
       )}

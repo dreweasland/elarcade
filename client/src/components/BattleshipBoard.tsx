@@ -52,7 +52,7 @@ export function BattleshipBoard({
     if (game.ready.includes(youId)) {
       return (
         <div className="bs-wrap">
-          <p className="bs-status">✅ Fleet ready! Waiting for your opponent…</p>
+          <p className="bs-status">Fleet ready! Waiting for your opponent…</p>
           <FleetGrid size={size} ships={myShips(game, youId)} shots={[]} hits={[]} label="Your fleet" />
         </div>
       );
@@ -85,7 +85,7 @@ export function BattleshipBoard({
       <TrackingGrid
         size={size}
         board={game.boards[oppId]}
-        label="🎯 Enemy waters"
+        label="Enemy waters"
         canFire={myTurn}
         onFire={onFire}
         freshCell={freshCell}
@@ -95,7 +95,7 @@ export function BattleshipBoard({
         ships={myShips(game, youId)}
         shots={game.boards[youId]?.shots ?? []}
         hits={game.boards[youId]?.hits ?? []}
-        label="🛡️ Your fleet"
+        label="Your fleet"
         freshCell={freshCell}
       />
     </div>
@@ -162,7 +162,7 @@ function PlacementEditor({
     <div className="bs-wrap">
       <div className="bs-place-head">
         <span className="bs-status">
-          {done ? '🎉 Fleet placed!' : `Place your ${activeSpec?.name} (${activeSpec?.size})`}
+          {done ? 'Fleet placed!' : `Place your ${activeSpec?.name} (${activeSpec?.size})`}
         </span>
       </div>
 
@@ -192,7 +192,7 @@ function PlacementEditor({
           {orient === 'H' ? '↔︎ Horizontal' : '↕︎ Vertical'}
         </button>
         <button className="btn ghost" onClick={randomize}>
-          🎲 Randomize
+          Randomize
         </button>
         <button className="btn ghost" onClick={() => setPlaced([])} disabled={placed.length === 0}>
           ↺ Clear
@@ -202,7 +202,7 @@ function PlacementEditor({
           disabled={!done}
           onClick={() => onPlace(placed.map((s) => ({ name: s.name, cells: s.cells })))}
         >
-          Ready ✓
+          Ready
         </button>
       </div>
     </div>
@@ -277,7 +277,7 @@ function FleetGrid({
               onMouseEnter={() => onCellEnter?.(i)}
               onMouseLeave={() => onCellLeave?.()}
             >
-              {isHit ? '💥' : isMiss ? '•' : ''}
+              {isHit ? '✕' : isMiss ? '•' : ''}
             </button>
           );
         })}
@@ -330,7 +330,7 @@ function TrackingGrid({
             .join(' ');
           return (
             <button key={i} className={cls} disabled={!fireable} onClick={() => fireable && onFire(i)}>
-              {isHit ? '💥' : isMiss ? '•' : ''}
+              {isHit ? '✕' : isMiss ? '•' : ''}
             </button>
           );
         })}

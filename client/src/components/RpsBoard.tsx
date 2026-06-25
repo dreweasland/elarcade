@@ -8,7 +8,7 @@ const PICKS: Array<{ pick: RpsPick; emoji: string; label: string }> = [
   { pick: 'scissors', emoji: '✌️', label: 'Scissors' },
 ];
 const EMOJI: Record<RpsPick, string> = { rock: '✊', paper: '✋', scissors: '✌️' };
-const CHANT = ['✊ Rock…', '✋ Paper…', '✌️ Scissors…', '👊 Shoot!'];
+const CHANT = ['Rock…', 'Paper…', 'Scissors…', 'Shoot!'];
 
 export function RpsBoard({
   game,
@@ -51,7 +51,7 @@ export function RpsBoard({
   let resultLine: string | null = null;
   if (result) {
     if (result.winner === 'tie') resultLine = "It's a tie — throw again!";
-    else if (result.winner === youId) resultLine = 'You won that round! 🎉';
+    else if (result.winner === youId) resultLine = 'You won that round!';
     else resultLine = `${nameOf(result.winner)} won that round.`;
   }
 
@@ -93,7 +93,7 @@ export function RpsBoard({
       {!game.winner && canPlay && !counting && (
         youLocked ? (
           <p className="rps-status">
-            🔒 Locked in! {oppLocked ? 'Revealing…' : `Waiting for ${nameOf(opponentId)}…`}
+            Locked in! {oppLocked ? 'Revealing…' : `Waiting for ${nameOf(opponentId)}…`}
           </p>
         ) : (
           <div className="rps-buttons">

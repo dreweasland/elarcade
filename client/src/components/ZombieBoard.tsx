@@ -64,7 +64,7 @@ export function ZombieBoard({
             <div key={id} className={`zd-score ${shownTurn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
               <span className="zd-score-avatar">{p?.avatar}</span>
               <span className="zd-score-name">{p?.name}</span>
-              <span className="zd-score-num">🧠 {game.scores[id] ?? 0}</span>
+              <span className="zd-score-num">{game.scores[id] ?? 0}</span>
             </div>
           );
         })}
@@ -73,16 +73,16 @@ export function ZombieBoard({
 
       <div className="zd-status">
         {rolling ? (
-          <span className="zd-dim">🎲 Rolling…</span>
+          <span className="zd-dim">Rolling…</span>
         ) : (
           <>
             <span>
-              🧠 Brains <b>{game.brains}</b>
+              Brains <b>{game.brains}</b>
             </span>
             <span className={game.shotguns >= 2 ? 'danger' : ''}>
-              💥 Shotguns <b>{game.shotguns}</b>/3
+              Shotguns <b>{game.shotguns}</b>/3
             </span>
-            <span>🎲 Cup {game.cupCount}</span>
+            <span>Cup <b>{game.cupCount}</b></span>
           </>
         )}
       </div>
@@ -103,10 +103,10 @@ export function ZombieBoard({
 
       <div className="zd-note">
         {rolling ? null : game.busted ? (
-          <span className="pig-bust-text">💥💥💥 Blasted! Three shotguns — turn lost!</span>
+          <span className="pig-bust-text">Blasted! Three shotguns — turn lost!</span>
         ) : game.kept.length > 0 ? (
           <span>
-            Carrying {game.kept.length} runner{game.kept.length > 1 ? 's' : ''} 👣 — roll again or bank!
+            Carrying {game.kept.length} runner{game.kept.length > 1 ? 's' : ''} — roll again or bank!
           </span>
         ) : (
           <span className="zd-dim">Eat brains, but 3 shotguns and you lose them all.</span>
@@ -116,10 +116,10 @@ export function ZombieBoard({
       {canPlay && (
         <div className="room-actions">
           <button className="btn primary big" disabled={!myTurn} onClick={onRoll}>
-            🎲 Roll
+            Roll
           </button>
           <button className="btn ghost" disabled={!myTurn || game.brains === 0} onClick={onBank}>
-            🧠 Bank ({game.brains})
+            Bank ({game.brains})
           </button>
         </div>
       )}

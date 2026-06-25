@@ -777,8 +777,8 @@ export interface OldMaidState {
   /** Own hand is real; the opponent's is redacted to []. Use handCounts for backs. */
   hands: Record<string, PlayingCard[]>;
   handCounts: Record<string, number>;
-  /** Pairs discarded per player so far (for display). */
-  pairs: Record<string, number>;
+  /** Matched cards each player has discarded, laid out face-up as pairs. */
+  discards: Record<string, PlayingCard[]>;
   turn: string | null;
   /** The card the active player just drew (now public — it left the opponent's hand). */
   lastDrawn: PlayingCard | null;

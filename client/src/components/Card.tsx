@@ -5,22 +5,24 @@ export function CardFace({
   card,
   faceDown,
   small,
+  tiny,
   onClick,
   selected,
 }: {
   card?: PlayingCard;
   faceDown?: boolean;
   small?: boolean;
+  tiny?: boolean;
   onClick?: () => void;
   selected?: boolean;
 }) {
-  const cls = `card ${small ? 'small' : ''} ${faceDown ? 'down' : ''} ${selected ? 'sel' : ''} ${
-    onClick ? 'clickable' : ''
-  }`;
+  const cls = `card ${tiny ? 'tiny' : small ? 'small' : ''} ${faceDown ? 'down' : ''} ${
+    selected ? 'sel' : ''
+  } ${onClick ? 'clickable' : ''}`;
   if (faceDown || !card) {
     return (
       <button className={cls} onClick={onClick} disabled={!onClick} aria-label="face-down card">
-        <span className="card-back">🐠</span>
+        <span className="card-back" />
       </button>
     );
   }

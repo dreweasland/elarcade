@@ -22,10 +22,10 @@ export function createOldMaid(playerIds: string[], firstPlayerId: string): OldMa
   for (const id of seating) hands[id] = [];
   trimmed.forEach((card, i) => hands[seating[i % seating.length]].push(card));
 
-  const pairs: Record<string, number> = {};
+  const discards: Record<string, PlayingCard[]> = {};
   const handCounts: Record<string, number> = {};
   for (const id of seating) {
-    pairs[id] = discardPairs(hands[id]);
+    discards[id] = discardPairs(hands[id]);
     handCounts[id] = hands[id].length;
   }
 
@@ -34,7 +34,7 @@ export function createOldMaid(playerIds: string[], firstPlayerId: string): OldMa
     seating,
     hands,
     handCounts,
-    pairs,
+    discards,
     turn: firstPlayerId,
     lastDrawn: null,
     lastPaired: false,
@@ -75,8 +75,8 @@ export function applyOldMaidMove(
   const myHand = next.hands[playerId];
   const matchAt = myHand.findIndex((c) => c.rank === card.rank);
   if (matchAt >= 0) {
-    myHand.splice(matchAt, 1);
-    next.pairs[playerId]++;
+    const matched = myHand.splice(matchAt, 1)[0];
+    next.discards[playerId].push(matched, card); // laid out face-up as a pair
     next.lastPaired = true;
   } else {
     myHand.push(card);
@@ -104,25 +104,25 @@ export function viewOldMaid(state: OldMaidState, viewerId: string | null): OldMa
 // Internals
 // ---------------------------------------------------------------------------
 
-/** Remove all rank-pairs from a hand (in place). Returns pairs removed. */
-function discardPairs(hand: PlayingCard[]): number {
-  let pairs = 0;
+/** Remove all rank-pairs from a hand (in place). Returns the removed cards. */
+function discardPairs(hand: PlayingCard[]): PlayingCard[] {
+  const removed: PlayingCard[] = [];
   let again = true;
   while (again) {
     again = false;
     outer: for (let i = 0; i < hand.length; i++) {
       for (let j = i + 1; j < hand.length; j++) {
         if (hand[i].rank === hand[j].rank) {
+          removed.push(hand[j], hand[i]);
           hand.splice(j, 1);
           hand.splice(i, 1);
-          pairs++;
           again = true;
           break outer;
         }
       }
     }
   }
-  return pairs;
+  return removed;
 }
 
 /** When one lone card (the odd Queen) is all that remains, end the game. */

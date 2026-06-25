@@ -129,13 +129,13 @@ export function DrawGuessBoard({
   } else if (isDrawer) {
     wordLine = (
       <span className="dg-word">
-        ✏️ Draw: <b>{game.word}</b>
+        Draw: <b>{game.word}</b>
       </span>
     );
   } else if (haveGuessed) {
     wordLine = (
       <span className="dg-word got">
-        ✅ <b>{game.word}</b>
+        <b>{game.word}</b>
       </span>
     );
   } else {
@@ -192,7 +192,7 @@ export function DrawGuessBoard({
             ))}
           </div>
           <button className="btn ghost small" onClick={clearCanvas}>
-            🗑 Clear
+            Clear
           </button>
         </div>
       )}
@@ -219,7 +219,7 @@ export function DrawGuessBoard({
           </button>
         </form>
       )}
-      {!isDrawer && haveGuessed && drawing && <p className="dg-got-note">🎉 You got it! Sit tight…</p>}
+      {!isDrawer && haveGuessed && drawing && <p className="dg-got-note">You got it! Sit tight…</p>}
 
       <div className="dg-scores">
         {game.seating.map((id) => {
@@ -228,8 +228,8 @@ export function DrawGuessBoard({
             <div key={id} className={`dg-score ${game.drawerId === id ? 'drawer' : ''}`}>
               <span>{p?.avatar}</span>
               <span className="dg-score-name">{p?.name}</span>
-              {game.drawerId === id && <span title="drawing">🎨</span>}
-              {game.guessed.includes(id) && <span title="guessed">✅</span>}
+              {game.drawerId === id && <span className="dg-tag">drawing</span>}
+              {game.guessed.includes(id) && <span className="dg-tag ok">guessed</span>}
               <span className="dg-score-pts">{game.scores[id] ?? 0}</span>
             </div>
           );
@@ -239,7 +239,7 @@ export function DrawGuessBoard({
       <div className="dg-feed">
         {game.chat.slice(-8).map((c) => {
           const name = playerById(c.playerId)?.name ?? 'Someone';
-          if (c.kind === 'correct') return <p key={c.id} className="dg-msg correct">{name} guessed it! ✅</p>;
+          if (c.kind === 'correct') return <p key={c.id} className="dg-msg correct">{name} guessed it!</p>;
           if (c.kind === 'system') return <p key={c.id} className="dg-msg system">{c.text}</p>;
           return (
             <p key={c.id} className="dg-msg">

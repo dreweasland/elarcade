@@ -1,11 +1,45 @@
 import { useEffect, useRef, useState } from 'react';
-import { CardRank, CARD_RANKS, GoFishState, PublicPlayer } from '../../../shared/protocol.ts';
+import {
+  CardRank,
+  CARD_RANKS,
+  CARD_SUITS,
+  CardSuit,
+  GoFishState,
+  PublicPlayer,
+  SUIT_EMOJI,
+} from '../../../shared/protocol.ts';
 import { sfx } from '../sounds.ts';
 import { CardFace } from './Card.tsx';
 
 const REVEAL_MS = 1700;
-
 type Ask = NonNullable<GoFishState['lastAsk']>;
+
+/** A completed book — all four suits of one rank, shown as a small set. */
+function Book({ rank }: { rank: CardRank }) {
+  return (
+    <span className="gf-book">
+      <b className="gf-book-rank">{rank}</b>
+      <span className="gf-book-suits">
+        {CARD_SUITS.map((s: CardSuit) => (
+          <span key={s} className={s === 'hearts' || s === 'diamonds' ? 'red' : 'black'}>
+            {SUIT_EMOJI[s]}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
+
+function Books({ ranks }: { ranks: CardRank[] }) {
+  if (!ranks.length) return <span className="gf-none">no books yet</span>;
+  return (
+    <div className="gf-books-row">
+      {ranks.map((r) => (
+        <Book key={r} rank={r} />
+      ))}
+    </div>
+  );
+}
 
 export function GoFishBoard({
   game,
@@ -21,11 +55,14 @@ export function GoFishBoard({
   onAsk: (rank: CardRank) => void;
 }) {
   const nameOf = (id: string | null) => players.find((p) => p.id === id)?.name ?? 'Someone';
-  const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar ?? '👾';
 
   const opponentId = game.seating.find((id) => id !== youId) ?? null;
   const myHand = game.hands[youId] ?? [];
-  const myRanks = CARD_RANKS.filter((r) => myHand.some((c) => c.rank === r));
+
+  // Group your hand into rank-stacks (in deck order).
+  const groups = CARD_RANKS.map((r) => ({ rank: r, cards: myHand.filter((c) => c.rank === r) })).filter(
+    (g) => g.cards.length > 0,
+  );
 
   // ----- ask / outcome reveal -----
   const [reveal, setReveal] = useState<Ask | null>(null);
@@ -49,66 +86,57 @@ export function GoFishBoard({
   return (
     <div className="gf-board">
       {opponentId && (
-        <div className="gf-opponent">
-          <span className="gf-opp-who">
-            {avatarOf(opponentId)} {nameOf(opponentId)}
-          </span>
-          <span className="gf-opp-meta">
-            🂠 {game.handCounts[opponentId] ?? 0} cards · 📚 {game.books[opponentId] ?? 0} books
-          </span>
-          {(game.bookRanks[opponentId]?.length ?? 0) > 0 && (
-            <span className="gf-books">{game.bookRanks[opponentId].join(' ')}</span>
-          )}
-        </div>
+        <section className="gf-side">
+          <header className="gf-head">
+            <span className="gf-name">{nameOf(opponentId)}</span>
+            <span className="gf-meta">
+              {game.handCounts[opponentId] ?? 0} cards · deck {game.poolCount}
+            </span>
+          </header>
+          <Books ranks={game.bookRanks[opponentId] ?? []} />
+        </section>
       )}
-
-      <div className="gf-ocean">🌊 {game.poolCount} cards in the ocean</div>
 
       {reveal ? (
         <div className="gf-reveal">
           <span className="gf-reveal-q">
-            {avatarOf(reveal.asker)} <b>{nameOf(reveal.asker)}</b> asked for…
+            {nameOf(reveal.asker)} asked for <b>{reveal.rank}</b>
           </span>
-          <span className="gf-reveal-rank pop">{reveal.rank}</span>
           <span className={`gf-reveal-out ${reveal.fished ? 'fish' : 'got'}`}>
-            {reveal.fished
-              ? '🎣 Go Fish!'
-              : `✅ Got ${reveal.got} from ${nameOf(reveal.target)}!`}
+            {reveal.fished ? 'Go Fish!' : `Handed over ${reveal.got}`}
           </span>
         </div>
       ) : (
-        game.lastAction && (
-          <p className="gf-log">{game.lastAction.replace(/\{([^}]+)\}/g, (_, id) => nameOf(id))}</p>
-        )
+        <div className="gf-turnline">
+          {game.winner ? '' : yourTurn ? 'Your turn — tap cards to ask for that rank' : `${nameOf(game.turn)}'s turn`}
+        </div>
       )}
 
-      <div className="gf-you">
-        <span className="gf-you-meta">
-          Your books: 📚 {game.books[youId] ?? 0}
-          {(game.bookRanks[youId]?.length ?? 0) > 0 && (
-            <span className="gf-books"> {game.bookRanks[youId].join(' ')}</span>
-          )}
-        </span>
-        <div className="gf-hand">
-          {myHand.map((c) => (
-            <CardFace key={c.id} card={c} small />
+      <section className="gf-side">
+        <header className="gf-head">
+          <span className="gf-name">You</span>
+        </header>
+        <Books ranks={game.bookRanks[youId] ?? []} />
+        <p className="gf-prompt">Your hand</p>
+        <div className="gf-stacks">
+          {groups.map((g) => (
+            <button
+              key={g.rank}
+              className={`gf-stack ${yourTurn ? 'askable' : ''}`}
+              disabled={!yourTurn}
+              onClick={() => yourTurn && onAsk(g.rank)}
+              title={yourTurn ? `Ask for ${g.rank}s` : undefined}
+            >
+              {g.cards.map((c, i) => (
+                <span key={c.id} className="gf-stack-card" style={{ marginLeft: i === 0 ? 0 : -26 }}>
+                  <CardFace card={c} small />
+                </span>
+              ))}
+            </button>
           ))}
-          {myHand.length === 0 && <span className="gf-empty">Your hand is empty.</span>}
+          {groups.length === 0 && <span className="gf-none">hand empty</span>}
         </div>
-      </div>
-
-      {canPlay && !game.winner && (
-        <div className="gf-ask">
-          <span className="field-label">{yourTurn ? 'Ask your opponent for…' : 'Waiting…'}</span>
-          <div className="gf-ranks">
-            {myRanks.map((r) => (
-              <button key={r} className="rank-btn" disabled={!yourTurn} onClick={() => onAsk(r)}>
-                {r}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      </section>
     </div>
   );
 }

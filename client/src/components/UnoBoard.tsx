@@ -122,7 +122,7 @@ export function UnoBoard({
 
       {/* Your hand */}
       {!canPlay ? (
-        <p className="bs-status">👀 Spectating</p>
+        <p className="bs-status">Spectating</p>
       ) : (
         <>
           <div className="uno-hand-label">
@@ -135,7 +135,7 @@ export function UnoBoard({
                   sfx.click();
                 }}
               >
-                {unoArmed ? '✓ UNO armed' : 'Tap UNO!'}
+                {unoArmed ? 'UNO armed' : 'Tap UNO!'}
               </button>
             )}
           </div>

@@ -126,9 +126,9 @@ export function RoomScreen() {
     }
   } else if (room.status === 'finished' && g) {
     if (g.kind === 'telephone' || g.kind === 'fishbowl') banner = ''; // board shows its own wrap-up
-    else if (g.winner === 'draw') banner = "It's a draw! 🤝";
-    else if (g.winner === state.youId) banner = 'You win! 🎉';
-    else banner = `${room.players.find((p) => p.id === g.winner)?.name ?? 'Player'} wins! 🏆`;
+    else if (g.winner === 'draw') banner = "It's a draw!";
+    else if (g.winner === state.youId) banner = 'You win!';
+    else banner = `${room.players.find((p) => p.id === g.winner)?.name ?? 'Player'} wins!`;
   }
 
   const youReady = room.rematchReady.includes(state.youId);
@@ -137,8 +137,8 @@ export function RoomScreen() {
   if (g && g.kind === 'battleship' && g.lastSunk && !isSpectator) {
     sunkNote =
       g.lastSunk.by === state.youId
-        ? `💥 You sank their ${g.lastSunk.ship}!`
-        : `🌊 Your ${g.lastSunk.ship} was sunk!`;
+        ? `You sank their ${g.lastSunk.ship}!`
+        : `Your ${g.lastSunk.ship} was sunk!`;
   }
 
   // UNO action log — resolve {playerId} tokens to names.
@@ -152,8 +152,8 @@ export function RoomScreen() {
     const cur = room.players.find((p) => p.id === g.turn);
     actionNote =
       g.lastResult === 'match'
-        ? '✨ Match! Go again'
-        : `❌ No match — ${cur ? `${cur.name}'s turn` : 'next player'}`;
+        ? 'Match! Go again'
+        : `No match — ${cur ? `${cur.name}'s turn` : 'next player'}`;
   }
 
   return (
@@ -343,7 +343,7 @@ export function RoomScreen() {
             {youReady ? 'Ready! Waiting…' : 'Play again ↻'}
           </button>
         )}
-        {isSpectator && <span className="spectator-tag">👀 Spectating</span>}
+        {isSpectator && <span className="spectator-tag">Spectating</span>}
         <button className="btn ghost" onClick={() => arcade.leave()}>
           Leave
         </button>
@@ -390,12 +390,12 @@ function WaitingLobby({
     <div className="bot-controls">
       {!roomFull && (
         <button className="btn ghost" onClick={onAddBot}>
-          🤖 Add CPU
+          Add CPU
         </button>
       )}
       {botCount > 0 && (
         <button className="btn ghost" onClick={onRemoveBot}>
-          ➖ Remove CPU
+          Remove CPU
         </button>
       )}
     </div>
@@ -525,9 +525,9 @@ function RoomHeader({
       <button className="code-chip" onClick={share} title="Copy / share code">
         <span className="code-label">CODE</span>
         <span className="code-value">{code}</span>
-        <span className="code-action">{copied ? '✓ Copied' : '📋 Share'}</span>
+        <span className="code-action">{copied ? 'Copied' : 'Share'}</span>
       </button>
-      {spectators > 0 && <span className="spectator-count">👀 {spectators}</span>}
+      {spectators > 0 && <span className="spectator-count">{spectators} watching</span>}
     </div>
   );
 }

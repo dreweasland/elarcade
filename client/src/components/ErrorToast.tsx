@@ -18,7 +18,7 @@ export function ErrorToast({
   if (!message) return null;
   return (
     <div className="toast" role="alert" onClick={onDismiss}>
-      ⚠️ {message}
+      {message}
     </div>
   );
 }

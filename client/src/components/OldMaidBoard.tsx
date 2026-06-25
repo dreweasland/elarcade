@@ -5,6 +5,24 @@ import { CardFace } from './Card.tsx';
 
 const REVEAL_MS = 1500;
 
+/** A row of face-up matched pairs (two cards each). */
+function Pairs({ cards }: { cards: PlayingCard[] }) {
+  if (!cards.length) return <span className="om-none">no pairs yet</span>;
+  const pairs: PlayingCard[][] = [];
+  for (let i = 0; i < cards.length; i += 2) pairs.push(cards.slice(i, i + 2));
+  return (
+    <div className="om-pairs">
+      {pairs.map((pair, i) => (
+        <span className="om-pair" key={i}>
+          {pair.map((c) => (
+            <CardFace key={c.id} card={c} tiny />
+          ))}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function OldMaidBoard({
   game,
   players,
@@ -19,7 +37,6 @@ export function OldMaidBoard({
   onDraw: (index: number) => void;
 }) {
   const nameOf = (id: string | null) => players.find((p) => p.id === id)?.name ?? 'Someone';
-  const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar ?? '👾';
 
   const opponentId = game.seating.find((id) => id !== youId) ?? null;
   const myHand = game.hands[youId] ?? [];
@@ -48,49 +65,52 @@ export function OldMaidBoard({
   return (
     <div className="om-board">
       {opponentId && (
-        <div className="om-opponent">
-          <span className="om-who">
-            {avatarOf(opponentId)} {nameOf(opponentId)} · 👯 {game.pairs[opponentId] ?? 0} pairs
-          </span>
-          {yourTurn ? (
-            <p className="om-prompt">👉 Pick a card from their hand:</p>
-          ) : (
-            <p className="om-prompt dim">Their hand ({oppCount})</p>
-          )}
+        <section className="om-side">
+          <header className="om-head">
+            <span className="om-name">{nameOf(opponentId)}</span>
+            <span className="om-sub">pairs won</span>
+          </header>
+          <Pairs cards={game.discards[opponentId] ?? []} />
+          <p className="om-prompt">{yourTurn ? 'Pick a card from their hand' : 'Their hand'}</p>
           <div className="om-fan">
             {Array.from({ length: oppCount }).map((_, i) => (
               <CardFace key={i} faceDown onClick={yourTurn ? () => onDraw(i) : undefined} />
             ))}
-            {oppCount === 0 && <span className="gf-empty">No cards left!</span>}
+            {oppCount === 0 && <span className="om-none">empty</span>}
           </div>
-        </div>
+        </section>
       )}
 
       {reveal && (
         <div className="om-reveal">
           <div className="flip-card">
             <div className="flip-inner">
-              <div className="flip-back">🐠</div>
+              <div className="flip-back" />
               <div className="flip-front">
                 <CardFace card={reveal.card} />
               </div>
             </div>
           </div>
           <span className={`om-reveal-label ${reveal.paired ? 'pair' : ''}`}>
-            {reveal.paired ? 'Pair! 💞 Discarded' : 'No match — kept 🫣'}
+            {reveal.paired ? 'Matched a pair — discarded' : 'No match — kept'}
           </span>
         </div>
       )}
 
-      <div className="om-you">
-        <span className="om-who">Your hand · 👯 {game.pairs[youId] ?? 0} pairs</span>
+      <section className="om-side">
+        <header className="om-head">
+          <span className="om-name">You</span>
+          <span className="om-sub">pairs won</span>
+        </header>
+        <Pairs cards={game.discards[youId] ?? []} />
+        <p className="om-prompt">Your hand</p>
         <div className="om-fan">
           {myHand.map((c) => (
             <CardFace key={c.id} card={c} small />
           ))}
-          {myHand.length === 0 && <span className="gf-empty">Safe — no cards! 🎉</span>}
+          {myHand.length === 0 && <span className="om-none">safe — no cards left</span>}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

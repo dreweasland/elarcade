@@ -152,9 +152,7 @@ export function CheckersBoard({
   const poofEls = poofs.map((i) => {
     const { left, top } = disp(i);
     return (
-      <span key={`poof-${i}`} className="ck-poof" style={{ left: `${left}%`, top: `${top}%` }}>
-        💥
-      </span>
+      <span key={`poof-${i}`} className="ck-poof" style={{ left: `${left}%`, top: `${top}%` }} />
     );
   });
 
@@ -165,11 +163,11 @@ export function CheckersBoard({
           ? ''
           : yourTurn
             ? game.mustContinueFrom !== null
-              ? 'Keep jumping! ⛓️'
+              ? 'Keep jumping!'
               : 'Your move'
             : `${nameOf(game.turn)} is thinking…`}
         {myColor && !game.winner && (
-          <span className={`ck-youare ${myColor}`}> · you are {myColor === 'r' ? '🔴 Red' : '⚫ Black'}</span>
+          <span className={`ck-youare ${myColor}`}> · you are {myColor === 'r' ? 'Red' : 'Black'}</span>
         )}
       </p>
       <div className="ck-board">

@@ -13,7 +13,7 @@ export function MuteButton() {
         if (!next) sfx.click();
       }}
     >
-      {muted ? '🔇' : '🔊'}
+      {muted ? 'Muted' : 'Sound'}
     </button>
   );
 }
