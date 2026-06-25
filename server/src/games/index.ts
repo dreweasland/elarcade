@@ -17,6 +17,17 @@ import { applyOldMaidMove, createOldMaid, viewOldMaid } from './oldmaid.js';
 import { applyRpsMove, createRps, viewRps } from './rps.js';
 import { applyCheckersMove, createCheckers } from './checkers.js';
 import { applyLudoMove, createLudo } from './ludo.js';
+import {
+  botCheckers,
+  botChutes,
+  botConnectFour,
+  botGoFish,
+  botLudo,
+  botOldMaid,
+  botPig,
+  botRps,
+  botTicTacToe,
+} from './bots.js';
 
 export interface MoveOutcome {
   state: GameState;
@@ -39,6 +50,12 @@ export interface GameModule {
    * real-time games like Draw & Guess (round countdown).
    */
   tick?(state: GameState): { state: GameState; changed: boolean };
+  /**
+   * Optional CPU opponent. Returns the move the bot should make now, or null
+   * if it isn't this bot's turn / there's nothing to do. The room engine calls
+   * this on a timer so CPU moves feel natural. Omit for games without a bot.
+   */
+  botMove?(state: GameState, botId: string): GameMove | null;
 }
 
 export const GAME_MODULES: Record<GameId, GameModule> = {
@@ -46,11 +63,13 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createTicTacToe(ids, first),
     applyMove: (state, playerId, move) =>
       applyTicTacToeMove(state as any, playerId, move as any),
+    botMove: (state, botId) => botTicTacToe(state as any, botId),
   },
   connectFour: {
     createState: (ids, first) => createConnectFour(ids, first),
     applyMove: (state, playerId, move) =>
       applyConnectFourMove(state as any, playerId, move as any),
+    botMove: (state, botId) => botConnectFour(state as any, botId),
   },
   battleship: {
     createState: (ids, first) => createBattleship(ids, first),
@@ -71,6 +90,7 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
   pig: {
     createState: (ids, first, options) => createPig(ids, first, options),
     applyMove: (state, playerId, move) => applyPigMove(state as any, playerId, move as any),
+    botMove: (state, botId) => botPig(state as any, botId),
   },
   dots: {
     createState: (ids, first, options) => createDots(ids, first, options),
@@ -90,6 +110,7 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
   chutes: {
     createState: (ids, first) => createChutes(ids, first),
     applyMove: (state, playerId, move) => applyChutesMove(state as any, playerId, move as any),
+    botMove: (state, botId) => botChutes(state as any, botId),
   },
   cantstop: {
     createState: (ids, first) => createCantStop(ids, first),
@@ -111,23 +132,28 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createGoFish(ids, first),
     applyMove: (state, playerId, move) => applyGoFishMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewGoFish(state as any, viewerId),
+    botMove: (state, botId) => botGoFish(state as any, botId),
   },
   oldmaid: {
     createState: (ids, first) => createOldMaid(ids, first),
     applyMove: (state, playerId, move) => applyOldMaidMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewOldMaid(state as any, viewerId),
+    botMove: (state, botId) => botOldMaid(state as any, botId),
   },
   rps: {
     createState: (ids) => createRps(ids),
     applyMove: (state, playerId, move) => applyRpsMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewRps(state as any, viewerId),
+    botMove: (state, botId) => botRps(state as any, botId),
   },
   checkers: {
     createState: (ids, first) => createCheckers(ids, first),
     applyMove: (state, playerId, move) => applyCheckersMove(state as any, playerId, move as any),
+    botMove: (state, botId) => botCheckers(state as any, botId),
   },
   ludo: {
     createState: (ids, first) => createLudo(ids, first),
     applyMove: (state, playerId, move) => applyLudoMove(state as any, playerId, move as any),
+    botMove: (state, botId) => botLudo(state as any, botId),
   },
 };

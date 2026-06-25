@@ -68,6 +68,19 @@ export interface GameInfo {
   maxPlayers: number;
 }
 
+/** Games that have a CPU opponent the host can add in the lobby. */
+export const BOT_GAMES: GameId[] = [
+  'ticTacToe',
+  'connectFour',
+  'pig',
+  'chutes',
+  'gofish',
+  'oldmaid',
+  'rps',
+  'checkers',
+  'ludo',
+];
+
 /** Short player-count badge, e.g. "2P" or "2–4P", derived from min/max. */
 export function playerCountLabel(g: GameInfo): string {
   return g.minPlayers === g.maxPlayers
@@ -255,6 +268,8 @@ export interface PublicPlayer {
   name: string;
   avatar: string;
   connected: boolean;
+  /** True for CPU players (so the UI can label them and skip them in actions). */
+  isBot?: boolean;
 }
 
 export type RoomStatus = 'waiting' | 'playing' | 'finished';
@@ -938,6 +953,8 @@ export type ClientMessage =
   | { type: 'move'; move: GameMove }
   | { type: 'rematch' }
   | { type: 'startGame'; options?: GameOptions }
+  | { type: 'addBot' }
+  | { type: 'removeBot' }
   | { type: 'leaveRoom' }
   // Draw & Guess: lightweight stroke streaming from the current drawer.
   | { type: 'draw'; segment: DrawStroke }

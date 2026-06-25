@@ -85,6 +85,14 @@ export class ArcadeConnection {
     this.sendNow({ type: 'startGame', options });
   }
 
+  addBot(): void {
+    this.sendNow({ type: 'addBot' });
+  }
+
+  removeBot(): void {
+    this.sendNow({ type: 'removeBot' });
+  }
+
   // --- Draw & Guess live drawing ---
 
   sendDraw(segment: DrawStroke): void {

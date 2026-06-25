@@ -20,6 +20,7 @@ interface PlayerRecord {
   avatar: string;
   token: string;
   ws: WebSocket | null; // null while disconnected (awaiting reconnect)
+  isBot?: boolean; // CPU player — never has a socket
 }
 
 interface Room {
@@ -40,7 +41,13 @@ interface Room {
   emptyTimer: NodeJS.Timeout | null;
   /** Per-second game clock for real-time games (e.g. Draw & Guess). */
   gameTimer: NodeJS.Timeout | null;
+  /** Pending CPU move timer (one bot action in flight at a time). */
+  botTimer: NodeJS.Timeout | null;
 }
+
+const BOT_NAMES = ['Robo', 'Bleep', 'Chip', 'Gizmo'];
+const BOT_AVATARS = ['🤖', '👾', '🐲', '🚀'];
+const BOT_MOVE_MS = 1000; // pacing so CPU moves feel natural & animations play
 
 /** Per-socket bookkeeping so we can find a socket's room/player on any message. */
 interface SocketMeta {
@@ -81,6 +88,10 @@ export class RoomManager {
         return this.rematch(ws);
       case 'startGame':
         return this.startGame(ws, (msg as any).options);
+      case 'addBot':
+        return this.addBot(ws);
+      case 'removeBot':
+        return this.removeBot(ws);
       case 'draw':
         return this.draw(ws, false, (msg as any).segment);
       case 'drawClear':
@@ -105,6 +116,7 @@ export class RoomManager {
       if (player) player.ws = null; // keep the seat for a reconnect
     }
     this.sockets.delete(ws);
+    this.stopBots(room); // pause CPUs until a human is back
     this.scheduleCleanupIfEmpty(room);
     this.broadcast(room);
   }
@@ -133,6 +145,7 @@ export class RoomManager {
       lastFirstPlayerId: null,
       emptyTimer: null,
       gameTimer: null,
+      botTimer: null,
     };
     this.rooms.set(code, room);
     this.sockets.set(ws, { roomCode: code, playerId: player.id, spectator: false });
@@ -192,6 +205,7 @@ export class RoomManager {
         role: 'player',
       });
       this.broadcast(room);
+      this.scheduleBots(room); // resume CPUs now a human is back
       return;
     }
     // Token no longer valid (room expired) -> tell the client to start over.
@@ -209,6 +223,7 @@ export class RoomManager {
     room.gameState = result.state;
     this.settleResult(room);
     this.broadcast(room);
+    this.scheduleBots(room);
   }
 
   /** Apply scoring/finish once when a game declares a winner (from a move or tick). */
@@ -257,6 +272,7 @@ export class RoomManager {
       room.gameState = state;
       this.settleResult(room);
       this.broadcast(room);
+      this.scheduleBots(room);
     }, 1000);
   }
 
@@ -273,8 +289,8 @@ export class RoomManager {
     if (room.status !== 'finished') return;
 
     room.rematchReady.add(meta.playerId);
-    // Start again once every seated player is ready.
-    if (room.players.every((p) => room.rematchReady.has(p.id))) {
+    // Start again once every human seat is ready (bots are always ready).
+    if (room.players.every((p) => p.isBot || room.rematchReady.has(p.id))) {
       this.startRound(room);
     }
     this.broadcast(room);
@@ -307,6 +323,90 @@ export class RoomManager {
     this.broadcast(room);
   }
 
+  private addBot(ws: WebSocket): void {
+    const { room, meta } = this.context(ws) ?? {};
+    if (!room || !meta || meta.spectator) return;
+    if (meta.playerId !== room.hostId) {
+      return this.send(ws, { type: 'error', message: 'Only the host can add a CPU.' });
+    }
+    if (room.status !== 'waiting') return;
+    if (!GAME_MODULES[room.game].botMove) {
+      return this.send(ws, { type: 'error', message: 'This game has no CPU yet.' });
+    }
+    const info = GAMES[room.game];
+    if (room.players.length >= info.maxPlayers) {
+      return this.send(ws, { type: 'error', message: 'Room is full.' });
+    }
+    const n = room.players.filter((p) => p.isBot).length;
+    const bot: PlayerRecord = {
+      id: randomId(8),
+      name: BOT_NAMES[n % BOT_NAMES.length],
+      avatar: BOT_AVATARS[n % BOT_AVATARS.length],
+      token: '',
+      ws: null,
+      isBot: true,
+    };
+    room.players.push(bot);
+    room.scores[bot.id] = 0;
+
+    // Fixed-roster games (the 2-player cabinets) start as soon as they're full.
+    const fixedRoster = info.minPlayers === info.maxPlayers;
+    if (fixedRoster && room.players.length >= info.maxPlayers) {
+      this.startRound(room);
+    }
+    this.broadcast(room);
+  }
+
+  private removeBot(ws: WebSocket): void {
+    const { room, meta } = this.context(ws) ?? {};
+    if (!room || !meta || meta.spectator) return;
+    if (meta.playerId !== room.hostId || room.status !== 'waiting') return;
+    for (let i = room.players.length - 1; i >= 0; i--) {
+      if (room.players[i].isBot) {
+        delete room.scores[room.players[i].id];
+        room.players.splice(i, 1);
+        break;
+      }
+    }
+    this.broadcast(room);
+  }
+
+  /** Schedule the next CPU action (if any) on a timer, then chain. */
+  private scheduleBots(room: Room): void {
+    if (room.botTimer) return;
+    if (room.status !== 'playing' || !room.gameState) return;
+    // Pause CPUs while no human is watching (resumes on reconnect).
+    if (!room.players.some((p) => !p.isBot && p.ws !== null)) return;
+    const mod = GAME_MODULES[room.game];
+    if (!mod.botMove) return;
+    const botMove = mod.botMove;
+    const ready = room.players.find((p) => p.isBot && botMove(room.gameState!, p.id) != null);
+    if (!ready) return;
+
+    room.botTimer = setTimeout(() => {
+      room.botTimer = null;
+      if (room.status !== 'playing' || !room.gameState || !mod.botMove) return;
+      const move = mod.botMove(room.gameState, ready.id);
+      if (!move) return this.scheduleBots(room);
+      const result = mod.applyMove(room.gameState, ready.id, move);
+      if (result.error) {
+        console.error(`CPU move rejected (${room.game}): ${result.error}`);
+        return; // stop rather than spin
+      }
+      room.gameState = result.state;
+      this.settleResult(room);
+      this.broadcast(room);
+      this.scheduleBots(room); // chain: push-your-luck, multiple bots, etc.
+    }, BOT_MOVE_MS);
+  }
+
+  private stopBots(room: Room): void {
+    if (room.botTimer) {
+      clearTimeout(room.botTimer);
+      room.botTimer = null;
+    }
+  }
+
   private leave(ws: WebSocket): void {
     const meta = this.sockets.get(ws);
     if (!meta) return;
@@ -328,6 +428,12 @@ export class RoomManager {
         room.status = 'waiting';
         room.gameState = null;
         this.stopGameTimer(room);
+        this.stopBots(room);
+      }
+      // A lone human left with only bots behind — clear the bots out too.
+      if (room.players.every((p) => p.isBot)) {
+        room.players = [];
+        room.scores = {};
       }
     }
     this.sockets.delete(ws);
@@ -340,6 +446,7 @@ export class RoomManager {
   // -------------------------------------------------------------------------
 
   private startRound(room: Room): void {
+    this.stopBots(room);
     const ids = room.players.map((p) => p.id);
     const firstPlayerId = this.pickFirstPlayer(room);
     room.gameState = GAME_MODULES[room.game].createState(ids, firstPlayerId, room.options);
@@ -347,6 +454,7 @@ export class RoomManager {
     room.status = 'playing';
     room.rematchReady.clear();
     this.startGameTimer(room); // no-op for games without a tick
+    this.scheduleBots(room); // in case a bot moves first
   }
 
   /** Loser of the last round goes first; on a draw or first game, alternate. */
@@ -392,7 +500,8 @@ export class RoomManager {
         id: p.id,
         name: p.name,
         avatar: p.avatar,
-        connected: p.ws !== null,
+        connected: p.ws !== null || !!p.isBot,
+        isBot: p.isBot,
       })),
       hostId: room.hostId,
       scores: { ...room.scores },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { GAMES, GameId, GameOptions } from '../../../shared/protocol.ts';
+import { BOT_GAMES, GAMES, GameId, GameOptions } from '../../../shared/protocol.ts';
 import { useArcade } from '../useArcade.ts';
 import { sfx } from '../sounds.ts';
 import { TicTacToeBoard } from './TicTacToeBoard.tsx';
@@ -321,7 +321,13 @@ export function RoomScreen() {
       ) : (
         <div className="board-placeholder">
           <span className="big-icon">{info.icon}</span>
-          <WaitingLobby room={room} youId={state.youId} onStart={(options) => arcade.startGame(options)} />
+          <WaitingLobby
+            room={room}
+            youId={state.youId}
+            onStart={(options) => arcade.startGame(options)}
+            onAddBot={() => arcade.addBot()}
+            onRemoveBot={() => arcade.removeBot()}
+          />
         </div>
       )}
 
@@ -354,10 +360,14 @@ function WaitingLobby({
   room,
   youId,
   onStart,
+  onAddBot,
+  onRemoveBot,
 }: {
   room: NonNullable<ReturnType<typeof useArcade>['state']['room']>;
   youId: string;
   onStart: (options?: GameOptions) => void;
+  onAddBot: () => void;
+  onRemoveBot: () => void;
 }) {
   const info = GAMES[room.game];
   const isHost = youId === room.hostId;
@@ -366,6 +376,24 @@ function WaitingLobby({
   const [size, setSize] = useState<Size>('medium');
   const [dice, setDice] = useState<1 | 2>(1);
   const [words, setWords] = useState(3);
+
+  const botCount = room.players.filter((p) => p.isBot).length;
+  const roomFull = room.players.length >= info.maxPlayers;
+  const canBot = isHost && BOT_GAMES.includes(room.game);
+  const botControls = canBot && (
+    <div className="bot-controls">
+      {!roomFull && (
+        <button className="btn ghost" onClick={onAddBot}>
+          🤖 Add CPU
+        </button>
+      )}
+      {botCount > 0 && (
+        <button className="btn ghost" onClick={onRemoveBot}>
+          ➖ Remove CPU
+        </button>
+      )}
+    </div>
+  );
 
   const startOptions = (): GameOptions | undefined => {
     if (room.game === 'pig') return { dice };
@@ -432,6 +460,7 @@ function WaitingLobby({
             </div>
           </div>
         )}
+        {botControls}
         <button className="btn primary big" onClick={() => onStart(startOptions())}>
           Start game ▶
         </button>
@@ -440,10 +469,14 @@ function WaitingLobby({
   }
   if (!enough) {
     return (
-      <p>
-        Share the code up top so {info.maxPlayers > 2 ? 'friends' : 'a friend'} can join! (
-        {room.players.length}/{info.maxPlayers})
-      </p>
+      <>
+        <p>
+          Share the code up top so {info.maxPlayers > 2 ? 'friends' : 'a friend'} can join! (
+          {room.players.length}/{info.maxPlayers})
+        </p>
+        {canBot && <p className="bot-hint">…or play solo against a CPU:</p>}
+        {botControls}
+      </>
     );
   }
   return <p>Waiting for the host to start…</p>;
