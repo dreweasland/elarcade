@@ -1,5 +1,9 @@
-import { OldMaidState, PublicPlayer, SUIT_EMOJI } from '../../../shared/protocol.ts';
+import { useEffect, useRef, useState } from 'react';
+import { OldMaidState, PlayingCard, PublicPlayer } from '../../../shared/protocol.ts';
+import { sfx } from '../sounds.ts';
 import { CardFace } from './Card.tsx';
+
+const REVEAL_MS = 1500;
 
 export function OldMaidBoard({
   game,
@@ -20,13 +24,26 @@ export function OldMaidBoard({
   const opponentId = game.seating.find((id) => id !== youId) ?? null;
   const myHand = game.hands[youId] ?? [];
   const oppCount = opponentId ? game.handCounts[opponentId] ?? 0 : 0;
-  const yourTurn = canPlay && game.turn === youId;
 
-  const drawNote =
-    game.lastDrawn &&
-    `Last draw: ${game.lastDrawn.rank}${SUIT_EMOJI[game.lastDrawn.suit]} — ${
-      game.lastPaired ? 'paired up! ✅' : 'no match'
-    }`;
+  // ----- draw reveal animation -----
+  const [reveal, setReveal] = useState<{ card: PlayingCard; paired: boolean } | null>(null);
+  const prevMoves = useRef(game.moves);
+  useEffect(() => {
+    if (game.moves === prevMoves.current) return;
+    prevMoves.current = game.moves;
+    if (!game.lastDrawn) return;
+    setReveal({ card: game.lastDrawn, paired: game.lastPaired });
+    sfx.click();
+    const flip = window.setTimeout(() => (game.lastPaired ? sfx.join() : sfx.place()), 650);
+    const done = window.setTimeout(() => setReveal(null), REVEAL_MS);
+    return () => {
+      clearTimeout(flip);
+      clearTimeout(done);
+    };
+  }, [game.moves, game.lastDrawn, game.lastPaired]);
+
+  // Hold off interaction until the reveal finishes, so the wind-up is seen.
+  const yourTurn = canPlay && game.turn === youId && !reveal && !game.winner;
 
   return (
     <div className="om-board">
@@ -49,7 +66,21 @@ export function OldMaidBoard({
         </div>
       )}
 
-      {drawNote && <p className="om-draw">{drawNote}</p>}
+      {reveal && (
+        <div className="om-reveal">
+          <div className="flip-card">
+            <div className="flip-inner">
+              <div className="flip-back">🐠</div>
+              <div className="flip-front">
+                <CardFace card={reveal.card} />
+              </div>
+            </div>
+          </div>
+          <span className={`om-reveal-label ${reveal.paired ? 'pair' : ''}`}>
+            {reveal.paired ? 'Pair! 💞 Discarded' : 'No match — kept 🫣'}
+          </span>
+        </div>
+      )}
 
       <div className="om-you">
         <span className="om-who">Your hand · 👯 {game.pairs[youId] ?? 0} pairs</span>

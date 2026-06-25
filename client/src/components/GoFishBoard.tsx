@@ -1,5 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { CardRank, CARD_RANKS, GoFishState, PublicPlayer } from '../../../shared/protocol.ts';
+import { sfx } from '../sounds.ts';
 import { CardFace } from './Card.tsx';
+
+const REVEAL_MS = 1700;
+
+type Ask = NonNullable<GoFishState['lastAsk']>;
 
 export function GoFishBoard({
   game,
@@ -19,14 +25,26 @@ export function GoFishBoard({
 
   const opponentId = game.seating.find((id) => id !== youId) ?? null;
   const myHand = game.hands[youId] ?? [];
-  const yourTurn = canPlay && game.turn === youId;
-
-  // Distinct ranks in your hand, in deck order, for the "ask" buttons.
   const myRanks = CARD_RANKS.filter((r) => myHand.some((c) => c.rank === r));
 
-  const log = game.lastAction
-    ? game.lastAction.replace(/\{([^}]+)\}/g, (_, id) => nameOf(id))
-    : null;
+  // ----- ask / outcome reveal -----
+  const [reveal, setReveal] = useState<Ask | null>(null);
+  const prevMoves = useRef(game.moves);
+  useEffect(() => {
+    if (game.moves === prevMoves.current) return;
+    prevMoves.current = game.moves;
+    if (!game.lastAsk) return;
+    setReveal(game.lastAsk);
+    sfx.click();
+    const hit = window.setTimeout(() => (game.lastAsk!.fished ? sfx.place() : sfx.join()), 700);
+    const done = window.setTimeout(() => setReveal(null), REVEAL_MS);
+    return () => {
+      clearTimeout(hit);
+      clearTimeout(done);
+    };
+  }, [game.moves, game.lastAsk]);
+
+  const yourTurn = canPlay && game.turn === youId && !reveal && !game.winner;
 
   return (
     <div className="gf-board">
@@ -45,7 +63,24 @@ export function GoFishBoard({
       )}
 
       <div className="gf-ocean">🌊 {game.poolCount} cards in the ocean</div>
-      {log && <p className="gf-log">{log}</p>}
+
+      {reveal ? (
+        <div className="gf-reveal">
+          <span className="gf-reveal-q">
+            {avatarOf(reveal.asker)} <b>{nameOf(reveal.asker)}</b> asked for…
+          </span>
+          <span className="gf-reveal-rank pop">{reveal.rank}</span>
+          <span className={`gf-reveal-out ${reveal.fished ? 'fish' : 'got'}`}>
+            {reveal.fished
+              ? '🎣 Go Fish!'
+              : `✅ Got ${reveal.got} from ${nameOf(reveal.target)}!`}
+          </span>
+        </div>
+      ) : (
+        game.lastAction && (
+          <p className="gf-log">{game.lastAction.replace(/\{([^}]+)\}/g, (_, id) => nameOf(id))}</p>
+        )
+      )}
 
       <div className="gf-you">
         <span className="gf-you-meta">
@@ -64,15 +99,10 @@ export function GoFishBoard({
 
       {canPlay && !game.winner && (
         <div className="gf-ask">
-          <span className="field-label">{yourTurn ? 'Ask your opponent for…' : 'Waiting for your turn…'}</span>
+          <span className="field-label">{yourTurn ? 'Ask your opponent for…' : 'Waiting…'}</span>
           <div className="gf-ranks">
             {myRanks.map((r) => (
-              <button
-                key={r}
-                className="rank-btn"
-                disabled={!yourTurn}
-                onClick={() => onAsk(r)}
-              >
+              <button key={r} className="rank-btn" disabled={!yourTurn} onClick={() => onAsk(r)}>
                 {r}
               </button>
             ))}

@@ -30,6 +30,7 @@ export function createGoFish(playerIds: string[], firstPlayerId: string): GoFish
     bookRanks,
     turn: firstPlayerId,
     lastAction: null,
+    lastAsk: null,
     winner: null,
     moves: 0,
   };
@@ -66,6 +67,7 @@ export function applyGoFishMove(
     next.hands[opponent] = next.hands[opponent].filter((c) => c.rank !== move.rank);
     next.hands[asker].push(...matches);
     next.lastAction = `${askerName} got ${matches.length} ${move.rank} from ${oppName}!`;
+    next.lastAsk = { asker, target: opponent, rank: move.rank, got: matches.length, fished: false };
     harvestBooks(next, asker);
     next.moves++;
     refillIfEmpty(next, asker);
@@ -74,6 +76,7 @@ export function applyGoFishMove(
   }
 
   // Go fish — draw from the ocean.
+  next.lastAsk = { asker, target: opponent, rank: move.rank, got: 0, fished: true };
   if (next.pool && next.pool.length > 0) {
     const drawn = next.pool.shift()!;
     next.hands[asker].push(drawn);

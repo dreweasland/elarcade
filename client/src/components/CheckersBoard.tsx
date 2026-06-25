@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckerPiece, CheckersState, PublicPlayer } from '../../../shared/protocol.ts';
+import { sfx } from '../sounds.ts';
 
 type Board = (CheckerPiece | null)[];
 
@@ -52,14 +53,29 @@ export function CheckersBoard({
   const nameOf = (id: string | null) => players.find((p) => p.id === id)?.name ?? 'Someone';
   const myColor = game.marks[youId] ?? null;
   const yourTurn = canPlay && game.turn === youId && !!myColor;
+  const flip = myColor === 'b'; // keep your own pieces nearest you
 
   const [selected, setSelected] = useState<number | null>(null);
 
-  // Mid multi-jump: force-select the chaining piece.
   useEffect(() => {
     if (game.mustContinueFrom !== null && game.turn === youId) setSelected(game.mustContinueFrom);
     else setSelected(null);
   }, [game.mustContinueFrom, game.turn, game.moves, youId]);
+
+  // Capture poof + sound when a piece is taken.
+  const [poofs, setPoofs] = useState<number[]>([]);
+  const prevMoves = useRef(game.moves);
+  useEffect(() => {
+    if (game.moves === prevMoves.current) return;
+    prevMoves.current = game.moves;
+    if (game.lastCaptured.length) {
+      setPoofs(game.lastCaptured);
+      sfx.hit();
+      const t = window.setTimeout(() => setPoofs([]), 600);
+      return () => clearTimeout(t);
+    }
+    sfx.place();
+  }, [game.moves, game.lastCaptured]);
 
   const targets =
     selected !== null
@@ -77,14 +93,70 @@ export function CheckersBoard({
       return;
     }
     if (piece && piece.color === myColor) {
-      if (game.mustContinueFrom !== null && i !== game.mustContinueFrom) return; // locked piece
+      if (game.mustContinueFrom !== null && i !== game.mustContinueFrom) return;
       setSelected(i);
     }
   }
 
-  // Red is rendered from the bottom for the red player; flip the view so your
-  // own pieces are always nearest you.
-  const order = myColor === 'b' ? [...Array(64).keys()].reverse() : [...Array(64).keys()];
+  // Display coords: flip the whole board for the black player.
+  const disp = (i: number): { left: number; top: number } => {
+    const [r, c] = rc(i);
+    const dr = flip ? 7 - r : r;
+    const dc = flip ? 7 - c : c;
+    return { left: ((dc + 0.5) / 8) * 100, top: ((dr + 0.5) / 8) * 100 };
+  };
+
+  // Background cells, in display order (mapped back to true squares).
+  const cells = Array.from({ length: 64 }, (_, d) => {
+    const dr = Math.floor(d / 8);
+    const dc = d % 8;
+    const r = flip ? 7 - dr : dr;
+    const c = flip ? 7 - dc : dc;
+    const i = idx(r, c);
+    const dark = (r + c) % 2 === 1;
+    const isSel = selected === i;
+    const isTarget = targets.includes(i);
+    const isLast = game.lastMove?.includes(i);
+    return (
+      <div
+        key={d}
+        className={`ck-sq ${dark ? 'dark' : 'light'} ${isSel ? 'sel' : ''} ${
+          isTarget ? 'target' : ''
+        } ${isLast ? 'last' : ''}`}
+        onClick={() => dark && tap(i)}
+      >
+        {isTarget && !game.board[i] && <span className="ck-dot" />}
+      </div>
+    );
+  });
+
+  // Pieces as an absolutely-positioned overlay (keyed by id → they glide).
+  const pieces = game.board
+    .map((p, i) => ({ p, i }))
+    .filter((x): x is { p: CheckerPiece; i: number } => !!x.p)
+    .map(({ p, i }) => {
+      const { left, top } = disp(i);
+      return (
+        <div
+          key={p.id}
+          className={`ck-pc ${p.color} ${p.color === myColor ? 'me' : ''} ${
+            game.lastMove?.[1] === i ? 'just' : ''
+          }`}
+          style={{ left: `${left}%`, top: `${top}%` }}
+        >
+          {p.king ? '♔' : ''}
+        </div>
+      );
+    });
+
+  const poofEls = poofs.map((i) => {
+    const { left, top } = disp(i);
+    return (
+      <span key={`poof-${i}`} className="ck-poof" style={{ left: `${left}%`, top: `${top}%` }}>
+        💥
+      </span>
+    );
+  });
 
   return (
     <div className="ck-wrap">
@@ -101,30 +173,9 @@ export function CheckersBoard({
         )}
       </p>
       <div className="ck-board">
-        {order.map((i) => {
-          const [r, c] = rc(i);
-          const dark = (r + c) % 2 === 1;
-          const piece = game.board[i];
-          const isSel = selected === i;
-          const isTarget = targets.includes(i);
-          const isLast = game.lastMove?.includes(i);
-          return (
-            <div
-              key={i}
-              className={`ck-sq ${dark ? 'dark' : 'light'} ${isSel ? 'sel' : ''} ${
-                isTarget ? 'target' : ''
-              } ${isLast ? 'last' : ''}`}
-              onClick={() => dark && tap(i)}
-            >
-              {piece && (
-                <span className={`ck-piece ${piece.color}`}>
-                  {piece.king ? '♔' : ''}
-                </span>
-              )}
-              {isTarget && !piece && <span className="ck-dot" />}
-            </div>
-          );
-        })}
+        {cells}
+        {pieces}
+        {poofEls}
       </div>
     </div>
   );

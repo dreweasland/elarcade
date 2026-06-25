@@ -21,11 +21,13 @@ export function createCheckers(playerIds: string[], firstPlayerId: string): Chec
   const marks: Record<string, Color> = { [firstPlayerId]: 'r', [other]: 'b' };
 
   const board: Board = Array(64).fill(null);
+  let b = 0;
+  let rd = 0;
   for (let r = 0; r < 3; r++) {
-    for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) board[idx(r, c)] = { color: 'b', king: false };
+    for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) board[idx(r, c)] = { id: `b${b++}`, color: 'b', king: false };
   }
   for (let r = 5; r < 8; r++) {
-    for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) board[idx(r, c)] = { color: 'r', king: false };
+    for (let c = 0; c < 8; c++) if ((r + c) % 2 === 1) board[idx(r, c)] = { id: `r${rd++}`, color: 'r', king: false };
   }
 
   return {
@@ -35,6 +37,7 @@ export function createCheckers(playerIds: string[], firstPlayerId: string): Chec
     turn: firstPlayerId,
     mustContinueFrom: null,
     lastMove: null,
+    lastCaptured: [],
     winner: null,
     moves: 0,
   };
@@ -71,10 +74,12 @@ export function applyCheckersMove(
   const jump = jumpsFrom(board, from).find((j) => j.to === to);
   let didJump = false;
 
+  next.lastCaptured = [];
   if (jump) {
     board[to] = moving;
     board[from] = null;
     board[jump.over] = null;
+    next.lastCaptured = [jump.over];
     didJump = true;
   } else {
     if (state.mustContinueFrom !== null) return { state, error: 'Keep jumping with this piece.' };

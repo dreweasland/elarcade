@@ -740,6 +740,8 @@ export interface GoFishState {
   turn: string | null;
   /** Human-readable last action (with {playerId} tokens), for the table log. */
   lastAction: string | null;
+  /** Structured summary of the last ask, so the client can animate the reveal. */
+  lastAsk: { asker: string; target: string; rank: CardRank; got: number; fished: boolean } | null;
   winner: string | 'draw' | null;
   moves: number;
 }
@@ -795,6 +797,8 @@ export type RpsMove = { action: 'throw'; pick: RpsPick };
 // --- Checkers --------------------------------------------------------------
 
 export interface CheckerPiece {
+  /** Stable id so the client can glide a piece across squares as it moves. */
+  id: string;
   color: 'r' | 'b';
   king: boolean;
 }
@@ -810,6 +814,8 @@ export interface CheckersState {
   mustContinueFrom: number | null;
   /** Squares touched by the last move (for highlighting). */
   lastMove: number[] | null;
+  /** Squares whose pieces were captured on the last move (for a poof animation). */
+  lastCaptured: number[];
   winner: string | 'draw' | null;
   moves: number;
 }
