@@ -38,20 +38,25 @@ export function applyChutesMove(state: ChutesState, playerId: string, move: Chut
   next.lastVia = null;
 
   let pos = from + roll;
+
+  // Apply a ladder or chute first (they live on squares 1–99) — a ladder can
+  // carry you onto 100 (e.g. 80 -> 100), which must count as a win.
+  if (pos < 100) {
+    const dest = CHUTES_BOARD[pos];
+    if (dest !== undefined) {
+      next.lastVia = dest > pos ? 'ladder' : 'chute';
+      pos = dest;
+    }
+  }
+
+  // Reaching or passing 100 wins (kid-friendly: no exact-landing bounce-back).
   if (pos >= 100) {
-    // Reaching or passing 100 wins (kid-friendly: no exact-landing bounce-back).
     next.positions[playerId] = 100;
     next.winner = playerId;
     next.turn = null;
     return { state: next };
   }
 
-  // Apply a ladder or chute if we landed on one.
-  const dest = CHUTES_BOARD[pos];
-  if (dest !== undefined) {
-    next.lastVia = dest > pos ? 'ladder' : 'chute';
-    pos = dest;
-  }
   next.positions[playerId] = pos;
   next.turn = nextPlayer(next, playerId);
   return { state: next };

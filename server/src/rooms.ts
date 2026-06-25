@@ -1,5 +1,7 @@
 import type { WebSocket } from 'ws';
 import {
+  AVATARS,
+  DEFAULT_AVATAR,
   DrawGuessState,
   DrawStroke,
   GameId,
@@ -75,31 +77,39 @@ export class RoomManager {
       return this.send(ws, { type: 'error', message: 'Bad message.' });
     }
     const m = msg as { type?: string };
-    switch (m.type) {
-      case 'createRoom':
-        return this.createRoom(ws, msg as any);
-      case 'joinRoom':
-        return this.joinRoom(ws, msg as any);
-      case 'rejoin':
-        return this.rejoin(ws, (msg as any).token);
-      case 'move':
-        return this.move(ws, (msg as any).move);
-      case 'rematch':
-        return this.rematch(ws);
-      case 'startGame':
-        return this.startGame(ws, (msg as any).options);
-      case 'addBot':
-        return this.addBot(ws);
-      case 'removeBot':
-        return this.removeBot(ws);
-      case 'draw':
-        return this.draw(ws, false, (msg as any).segment);
-      case 'drawClear':
-        return this.draw(ws, true);
-      case 'leaveRoom':
-        return this.leave(ws);
-      default:
-        return this.send(ws, { type: 'error', message: 'Unknown command.' });
+    // Error boundary: a malformed/malicious command (e.g. a bad `move` that
+    // makes game logic throw) must only fail this one interaction — never take
+    // down the whole process and every other room with it.
+    try {
+      switch (m.type) {
+        case 'createRoom':
+          return this.createRoom(ws, msg as any);
+        case 'joinRoom':
+          return this.joinRoom(ws, msg as any);
+        case 'rejoin':
+          return this.rejoin(ws, (msg as any).token);
+        case 'move':
+          return this.move(ws, (msg as any).move);
+        case 'rematch':
+          return this.rematch(ws);
+        case 'startGame':
+          return this.startGame(ws, (msg as any).options);
+        case 'addBot':
+          return this.addBot(ws);
+        case 'removeBot':
+          return this.removeBot(ws);
+        case 'draw':
+          return this.draw(ws, false, (msg as any).segment);
+        case 'drawClear':
+          return this.draw(ws, true);
+        case 'leaveRoom':
+          return this.leave(ws);
+        default:
+          return this.send(ws, { type: 'error', message: 'Unknown command.' });
+      }
+    } catch (err) {
+      console.error(`Error handling "${m.type}" message:`, err);
+      return this.send(ws, { type: 'error', message: 'Something went wrong with that action.' });
     }
   }
 
@@ -128,6 +138,7 @@ export class RoomManager {
   private createRoom(ws: WebSocket, msg: { game: GameId; player: PlayerIdentity }): void {
     const info = GAMES[msg.game];
     if (!info) return this.send(ws, { type: 'error', message: 'Unknown game.' });
+    this.detachSocket(ws); // leave any prior room so we don't orphan it
 
     const code = this.uniqueCode();
     const player = this.newPlayer(ws, code, msg.player);
@@ -158,6 +169,7 @@ export class RoomManager {
     const code = (msg.code || '').toUpperCase().trim();
     const room = this.rooms.get(code);
     if (!room) return this.send(ws, { type: 'error', message: 'No room with that code.' });
+    this.detachSocket(ws); // leave any prior room so we don't orphan it
 
     const info = GAMES[room.game];
     const seatTaken = room.players.length >= info.maxPlayers;
@@ -250,8 +262,11 @@ export class RoomManager {
       clearStrokes(gs);
       this.relayToOthers(room, meta.playerId, { type: 'drawClear' });
     } else if (segment) {
-      if (addStroke(gs, segment)) {
-        this.relayToOthers(room, meta.playerId, { type: 'drawSegment', segment });
+      // Relay the *sanitized* stroke the server stored — never the raw client
+      // payload (which could carry an unbounded points array / oversized color).
+      const clean = addStroke(gs, segment);
+      if (clean) {
+        this.relayToOthers(room, meta.playerId, { type: 'drawSegment', segment: clean });
       }
     }
   }
@@ -264,16 +279,23 @@ export class RoomManager {
   private startGameTimer(room: Room): void {
     this.stopGameTimer(room);
     if (!GAME_MODULES[room.game].tick) return;
-    room.gameTimer = setInterval(() => {
-      const mod = GAME_MODULES[room.game];
-      if (!room.gameState || room.status !== 'playing' || !mod.tick) return;
-      const { state, changed } = mod.tick(room.gameState);
-      if (!changed) return;
-      room.gameState = state;
-      this.settleResult(room);
-      this.broadcast(room);
-      this.scheduleBots(room);
-    }, 1000);
+    room.gameTimer = setInterval(() => this.tickOnce(room), 1000);
+  }
+
+  /** One game-clock step. Broadcasts only if the game state actually changed. */
+  private tickOnce(room: Room): void {
+    const mod = GAME_MODULES[room.game];
+    if (!room.gameState || room.status !== 'playing' || !mod.tick) return;
+    // Pause the clock while no seated human is connected, so a timed game
+    // doesn't burn through rounds during the reconnect grace and leave players
+    // returning to a game that skipped ahead (or ended).
+    if (!room.players.some((p) => !p.isBot && p.ws !== null)) return;
+    const { state, changed } = mod.tick(room.gameState);
+    if (!changed) return;
+    room.gameState = state;
+    this.settleResult(room);
+    this.broadcast(room);
+    this.scheduleBots(room);
   }
 
   private stopGameTimer(room: Room): void {
@@ -408,18 +430,27 @@ export class RoomManager {
   }
 
   private leave(ws: WebSocket): void {
+    if (!this.sockets.has(ws)) return;
+    this.send(ws, { type: 'left' });
+    this.detachSocket(ws);
+  }
+
+  /**
+   * Remove a socket from whatever room it currently occupies (player seat or
+   * spectator slot) and tidy up an emptied room. Does NOT notify the socket —
+   * used both by `leave` and before re-associating a socket with a new room, so
+   * a client can't orphan its previous room by creating/joining another.
+   */
+  private detachSocket(ws: WebSocket): void {
     const meta = this.sockets.get(ws);
     if (!meta) return;
+    this.sockets.delete(ws);
     const room = this.rooms.get(meta.roomCode);
-    this.send(ws, { type: 'left' });
-    if (!room) {
-      this.sockets.delete(ws);
-      return;
-    }
+    if (!room) return;
     if (meta.spectator) {
       room.spectators.delete(ws);
     } else {
-      // Explicit leave removes the seat entirely (not a reconnect).
+      // Leaving the seat entirely (not a reconnect).
       room.players = room.players.filter((p) => p.id !== meta.playerId);
       delete room.scores[meta.playerId];
       room.rematchReady.delete(meta.playerId);
@@ -436,7 +467,6 @@ export class RoomManager {
         room.scores = {};
       }
     }
-    this.sockets.delete(ws);
     this.scheduleCleanupIfEmpty(room);
     this.broadcast(room);
   }
@@ -477,15 +507,24 @@ export class RoomManager {
   // -------------------------------------------------------------------------
 
   private broadcast(room: Room): void {
-    // Each recipient gets a state redacted for their own eyes — players see
-    // their player id, spectators see the spectator (null) view.
-    for (const p of room.players) {
-      if (p.ws) this.send(p.ws, { type: 'roomState', room: this.publicState(room, p.id) });
+    const mod = GAME_MODULES[room.game];
+    if (room.gameState && mod.viewFor) {
+      // Hidden-info game: each player needs their own redacted view; spectators
+      // share the null view.
+      for (const p of room.players) {
+        if (p.ws) this.send(p.ws, { type: 'roomState', room: this.publicState(room, p.id) });
+      }
+      if (room.spectators.size > 0) {
+        const spec = JSON.stringify({ type: 'roomState', room: this.publicState(room, null) });
+        for (const s of room.spectators) this.sendRaw(s, spec);
+      }
+      return;
     }
-    if (room.spectators.size > 0) {
-      const spectatorState = this.publicState(room, null);
-      for (const s of room.spectators) this.send(s, { type: 'roomState', room: spectatorState });
-    }
+    // No redaction — everyone receives an identical payload, so build and
+    // serialize it once instead of per-recipient.
+    const payload = JSON.stringify({ type: 'roomState', room: this.publicState(room, null) });
+    for (const p of room.players) if (p.ws) this.sendRaw(p.ws, payload);
+    for (const s of room.spectators) this.sendRaw(s, payload);
   }
 
   private publicState(room: Room, viewerId: string | null): RoomState {
@@ -523,7 +562,7 @@ export class RoomManager {
     return {
       id: randomId(8),
       name: sanitizeName(identity.name),
-      avatar: identity.avatar || 'duck',
+      avatar: sanitizeAvatar(identity.avatar),
       token: `${code}.${randomId(24)}`,
       ws,
     };
@@ -558,7 +597,12 @@ export class RoomManager {
   }
 
   private send(ws: WebSocket, msg: ServerMessage): void {
-    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
+    this.sendRaw(ws, JSON.stringify(msg));
+  }
+
+  /** Send an already-serialized payload (lets broadcast serialize once). */
+  private sendRaw(ws: WebSocket, data: string): void {
+    if (ws.readyState === ws.OPEN) ws.send(data);
   }
 }
 
@@ -572,4 +616,9 @@ function randomId(len: number): string {
 function sanitizeName(name: string): string {
   const clean = (name || '').replace(/\s+/g, ' ').trim().slice(0, 16);
   return clean || 'Player';
+}
+
+/** Only accept a known avatar id; fall back to the default for anything else. */
+function sanitizeAvatar(avatar: string): string {
+  return (AVATARS as readonly string[]).includes(avatar) ? avatar : DEFAULT_AVATAR;
 }

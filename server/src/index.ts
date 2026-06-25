@@ -9,6 +9,9 @@ import { RoomManager } from './rooms.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT) || 3001;
 const clientDist = join(__dirname, '../../client/dist');
+// Cap incoming WS frames well below the ws default of 100 MiB. Real messages
+// are a small move or one drawing; this blocks oversized-payload JSON.parse DoS.
+const MAX_WS_PAYLOAD = 2 * 1024 * 1024; // 2 MiB
 
 const app = express();
 
@@ -23,7 +26,7 @@ if (existsSync(clientDist)) {
 }
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server, path: '/ws' });
+const wss = new WebSocketServer({ server, path: '/ws', maxPayload: MAX_WS_PAYLOAD });
 const rooms = new RoomManager();
 
 wss.on('connection', (ws) => {

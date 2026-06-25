@@ -15,12 +15,13 @@ const WORDS = [
   'poop'
 ];
 
-let wordCounter = 0;
-function pickWord(): string {
-  // Vary deterministically-ish without Math.random dependence concerns.
-  const idx = Math.floor(Math.random() * WORDS.length);
-  wordCounter++;
-  return WORDS[idx];
+function pickWord(exclude?: string): string {
+  let word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  // Avoid handing the next drawer the same word two rounds running.
+  for (let guard = 0; word === exclude && WORDS.length > 1 && guard < 10; guard++) {
+    word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  }
+  return word;
 }
 
 export function createDrawGuess(playerIds: string[], firstDrawerId: string): DrawGuessState {
@@ -130,7 +131,7 @@ function advanceRound(state: DrawGuessState): void {
   state.strokes = [];
   state.guessed = [];
   state.chat = [];
-  const word = pickWord();
+  const word = pickWord(state.word);
   state.word = word;
   state.wordLength = word.replace(/ /g, '').length;
 }
@@ -163,16 +164,25 @@ function normalize(s: string): string {
 // Drawing relay helpers (used by the room, not the move system)
 // ---------------------------------------------------------------------------
 
-export function addStroke(state: DrawGuessState, segment: DrawGuessState['strokes'][number]): boolean {
-  if (state.phase !== 'drawing') return false;
-  if (state.strokes.length >= MAX_STROKES) return false;
-  if (!segment || !Array.isArray(segment.points) || segment.points.length < 2) return false;
-  state.strokes.push({
+/**
+ * Validate + sanitize an incoming stroke. Returns the stored (bounded) stroke
+ * so the caller can relay exactly that to peers — never the raw client payload
+ * — or null if the stroke is rejected.
+ */
+export function addStroke(
+  state: DrawGuessState,
+  segment: DrawGuessState['strokes'][number],
+): DrawGuessState['strokes'][number] | null {
+  if (state.phase !== 'drawing') return null;
+  if (state.strokes.length >= MAX_STROKES) return null;
+  if (!segment || !Array.isArray(segment.points) || segment.points.length < 2) return null;
+  const clean = {
     color: String(segment.color || '#fff').slice(0, 12),
     width: Math.max(1, Math.min(40, Number(segment.width) || 4)),
     points: segment.points.slice(0, 512).map((n) => Math.round(n)),
-  });
-  return true;
+  };
+  state.strokes.push(clean);
+  return clean;
 }
 
 export function clearStrokes(state: DrawGuessState): void {

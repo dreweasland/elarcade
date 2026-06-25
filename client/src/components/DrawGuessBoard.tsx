@@ -36,6 +36,7 @@ export function DrawGuessBoard({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
+  const movedRef = useRef(false);
   const accRef = useRef<number[]>([]);
   const lastSentRef = useRef(0);
   const [color, setColor] = useState(COLORS[3]);
@@ -92,6 +93,7 @@ export function DrawGuessBoard({
     e.preventDefault();
     canvasRef.current?.setPointerCapture(e.pointerId);
     drawingRef.current = true;
+    movedRef.current = false;
     accRef.current = toBuf(e);
     lastSentRef.current = performance.now();
   }
@@ -102,6 +104,7 @@ export function DrawGuessBoard({
     const lx = acc[acc.length - 2];
     const ly = acc[acc.length - 1];
     if (x === lx && y === ly) return;
+    movedRef.current = true;
     acc.push(x, y);
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) paintStroke(ctx, { color, width, points: [lx, ly, x, y] });
@@ -110,6 +113,16 @@ export function DrawGuessBoard({
   function onUp() {
     if (!drawingRef.current) return;
     drawingRef.current = false;
+    // A tap with no movement is a dot — paintStroke renders a 2-element points
+    // array as one, but flush() needs >= 2 points, so handle it explicitly.
+    if (!movedRef.current) {
+      const [x, y] = [accRef.current[0], accRef.current[1]];
+      const ctx = canvasRef.current?.getContext('2d');
+      if (ctx) paintStroke(ctx, { color, width, points: [x, y] });
+      arcade.sendDraw({ color, width, points: [x, y] });
+      accRef.current = [];
+      return;
+    }
     flush(true);
   }
 

@@ -42,6 +42,12 @@ export function applyDotsMove(state: DotsState, playerId: string, move: DotsMove
   const next: DotsState = structuredClone(state);
   const { edge, r, c } = move;
 
+  // Coordinates must be whole numbers — otherwise NaN/floats slip past the
+  // range checks below (NaN comparisons are always false) and corrupt the grid.
+  if (!Number.isInteger(r) || !Number.isInteger(c)) {
+    return { state, error: 'That line is off the board.' };
+  }
+
   // Validate and set the edge.
   if (edge === 'h') {
     if (r < 0 || r > next.rows || c < 0 || c >= next.cols) {
