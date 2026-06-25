@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { DrawGuessState, DrawStroke, PublicPlayer } from '../../../shared/protocol.ts';
 import { arcade } from '../arcade.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const COLORS = ['#f3eaff', '#111018', '#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d', '#ff8c1a'];
 const WIDTHS = [4, 10, 20];
@@ -152,7 +153,7 @@ export function DrawGuessBoard({
         </span>
         <span className={`dg-timer ${game.secondsLeft <= 10 ? 'low' : ''}`}>⏱ {game.secondsLeft}s</span>
         <span className="dg-drawer">
-          {drawer?.avatar} {drawer?.name} {isDrawer ? '(you)' : ''} is drawing
+          <AvatarIcon id={drawer?.avatar} /> {drawer?.name} {isDrawer ? '(you)' : ''} is drawing
         </span>
       </div>
 
@@ -226,7 +227,7 @@ export function DrawGuessBoard({
           const p = playerById(id);
           return (
             <div key={id} className={`dg-score ${game.drawerId === id ? 'drawer' : ''}`}>
-              <span>{p?.avatar}</span>
+              <span><AvatarIcon id={p?.avatar} /></span>
               <span className="dg-score-name">{p?.name}</span>
               {game.drawerId === id && <span className="dg-tag">drawing</span>}
               {game.guessed.includes(id) && <span className="dg-tag ok">guessed</span>}

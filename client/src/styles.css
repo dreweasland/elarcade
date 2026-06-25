@@ -386,8 +386,16 @@ body {
 }
 .cabinet-icon {
   grid-area: icon;
-  font-size: 46px;
-  filter: drop-shadow(0 0 10px rgba(25, 230, 255, 0.5));
+  font-size: 42px;
+  color: var(--neon-cyan);
+  filter: drop-shadow(0 0 8px rgba(25, 230, 255, 0.45));
+}
+.game-icon {
+  display: block;
+}
+.avatar-icon {
+  display: inline-block;
+  vertical-align: middle;
 }
 .cabinet-name {
   grid-area: name;
@@ -695,6 +703,7 @@ body {
 }
 .big-icon {
   font-size: 72px;
+  color: var(--neon-cyan);
   filter: drop-shadow(0 0 14px rgba(25, 230, 255, 0.5));
 }
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { PublicPlayer, ZombieDie, ZombieState } from '../../../shared/protocol.ts';
 import { useDiceReveal } from './RollingDie.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const FACE: Record<ZombieDie['face'], string> = { brain: '🧠', foot: '👣', shotgun: '💥' };
 const FACES: ZombieDie['face'][] = ['brain', 'foot', 'shotgun'];
@@ -52,7 +53,7 @@ export function ZombieBoard({
     ? ''
     : canPlay && shownTurn === youId
       ? 'Your turn!'
-      : `${turnP?.avatar ?? ''} ${turnP?.name ?? 'Opponent'}'s turn`;
+      : `${turnP?.name ?? 'Opponent'}'s turn`;
 
   return (
     <div className="zd-table">
@@ -62,7 +63,7 @@ export function ZombieBoard({
           const p = playerById(id);
           return (
             <div key={id} className={`zd-score ${shownTurn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
-              <span className="zd-score-avatar">{p?.avatar}</span>
+              <span className="zd-score-avatar"><AvatarIcon id={p?.avatar} /></span>
               <span className="zd-score-name">{p?.name}</span>
               <span className="zd-score-num">{game.scores[id] ?? 0}</span>
             </div>

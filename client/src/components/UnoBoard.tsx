@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { PublicPlayer, UnoCard, UnoColor, UnoState } from '../../../shared/protocol.ts';
 import { sfx } from '../sounds.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const PICKABLE: UnoColor[] = ['red', 'yellow', 'green', 'blue'];
 
@@ -77,7 +78,7 @@ export function UnoBoard({
                 ))}
               </div>
               <div className="uno-opp-name">
-                <span>{p?.avatar}</span> {p?.name}
+                <AvatarIcon id={p?.avatar} /> {p?.name}
                 <b className="uno-count">{count}</b>
                 {count === 1 && <span className="uno-badge">UNO!</span>}
               </div>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { CHUTES_BOARD, ChutesState, PublicPlayer } from '../../../shared/protocol.ts';
 import { sfx } from '../sounds.ts';
 import { ROLL_MS, RollingDie } from './RollingDie.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const DIE_MS = ROLL_MS + 120; // let the die finish rolling before the token walks
 const STEP_MS = 230; // time per square while walking
@@ -150,7 +151,7 @@ export function ChutesBoard({
                       key={p.id}
                       className={`${p.id === youId ? 'me' : ''} ${anim?.mover === p.id ? 'hop' : ''}`}
                     >
-                      {p.avatar}
+                      <AvatarIcon id={p.avatar} />
                     </span>
                   ))}
                 </span>
@@ -163,7 +164,7 @@ export function ChutesBoard({
 
       {atStart.length > 0 && (
         <div className="ch-start">
-          Start: {atStart.map((p) => (<span key={p.id}>{p.avatar}</span>))}
+          Start: {atStart.map((p) => (<span key={p.id}><AvatarIcon id={p.avatar} /></span>))}
         </div>
       )}
 
@@ -174,7 +175,7 @@ export function ChutesBoard({
         {feedback && <span className="ch-feedback">{feedback}</span>}
       </div>
 
-      {game.winner && winner && <p className="ch-win">{winner.avatar} reached 100!</p>}
+      {game.winner && winner && <p className="ch-win"><AvatarIcon id={winner.avatar} /> reached 100!</p>}
 
       {canPlay && (
         <div className="room-actions">

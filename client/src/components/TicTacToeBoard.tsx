@@ -1,4 +1,5 @@
 import { PublicPlayer, TicTacToeState } from '../../../shared/protocol.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 export function TicTacToeBoard({
   game,
@@ -39,9 +40,9 @@ export function TicTacToeBoard({
             aria-label={mark ? `square ${i + 1}, ${owner?.name ?? mark}` : `empty square ${i + 1}`}
           >
             {owner ? (
-              <span className="cell-avatar">{owner.avatar}</span>
+              <span className="cell-avatar"><AvatarIcon id={owner.avatar} /></span>
             ) : playable ? (
-              <span className="cell-ghost">{markOwner(yourMark)?.avatar ?? yourMark}</span>
+              <span className="cell-ghost"><AvatarIcon id={markOwner(yourMark)?.avatar} /></span>
             ) : null}
           </button>
         );

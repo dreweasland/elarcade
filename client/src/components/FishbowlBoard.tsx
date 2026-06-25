@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FishbowlRound, FishbowlState, PublicPlayer } from '../../../shared/protocol.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const TEAM_LABELS: [string, string] = ['Team Coral', 'Team Aqua'];
 const TEAM_CLASS: [string, string] = ['coral', 'aqua'];
@@ -30,7 +31,7 @@ export function FishbowlBoard({
   onSkip: () => void;
 }) {
   const nameOf = (id: string | null) => players.find((p) => p.id === id)?.name ?? 'Someone';
-  const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar ?? '👾';
+  const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar;
 
   const inGame = game.seating.includes(youId);
   const yourTeam = inGame ? game.teams[youId] : null;
@@ -159,7 +160,7 @@ export function FishbowlBoard({
           </>
         ) : (
           <p className="fb-wait">
-            {avatarOf(game.clueGiver)} <b>{nameOf(game.clueGiver)}</b> ({teamBadge(game.activeTeam)})
+            <AvatarIcon id={avatarOf(game.clueGiver)} /> <b>{nameOf(game.clueGiver)}</b> ({teamBadge(game.activeTeam)})
             {onActiveTeam ? ' is about to give you clues — get ready to guess!' : ' is getting ready…'}
           </p>
         )}
@@ -194,7 +195,7 @@ export function FishbowlBoard({
       {header}
       {onActiveTeam ? (
         <p className="fb-guess">
-          Guess out loud! {avatarOf(game.clueGiver)} {nameOf(game.clueGiver)} is giving clues.
+          Guess out loud! <AvatarIcon id={avatarOf(game.clueGiver)} /> {nameOf(game.clueGiver)} is giving clues.
         </p>
       ) : (
         <p className="fb-wait">

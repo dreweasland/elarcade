@@ -69,7 +69,7 @@ export function BattleshipBoard({
             key={p.id}
             size={size}
             board={game.boards[p.id]}
-            label={`${p.avatar} ${p.name}`}
+            label={p.name}
             canFire={false}
             onFire={() => {}}
             freshCell={freshCell}

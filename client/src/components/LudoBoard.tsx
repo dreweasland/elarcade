@@ -8,6 +8,7 @@ import {
 } from '../../../shared/protocol.ts';
 import { sfx } from '../sounds.ts';
 import { RollingDie } from './RollingDie.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 type RC = [number, number];
 
@@ -93,7 +94,7 @@ export function LudoBoard({
   onMove: (token: number) => void;
 }) {
   const nameOf = (id: string | null) => players.find((p) => p.id === id)?.name ?? 'Someone';
-  const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar ?? '👾';
+  const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar;
 
   const myTurn = canPlay && game.turn === youId && !game.winner;
 
@@ -169,7 +170,7 @@ export function LudoBoard({
           disabled={!movable}
           onClick={() => movable && onMove(i)}
         >
-          {avatarOf(pid)}
+          <AvatarIcon id={avatarOf(pid)} />
         </button>,
       );
     });
@@ -187,7 +188,7 @@ export function LudoBoard({
         ? 'Roll a 6 to launch a token!'
         : 'Your roll!';
     } else {
-      status = `${avatarOf(game.turn)} ${nameOf(game.turn)} is playing…`;
+      status = `${nameOf(game.turn)} is playing…`;
     }
   }
 
@@ -203,7 +204,7 @@ export function LudoBoard({
               style={{ ['--c' as string]: CSS_COLOR[game.colors[pid]] }}
             >
               <span className="lu-chip" />
-              <span className="lu-pname">{avatarOf(pid)} {nameOf(pid)}</span>
+              <span className="lu-pname"><AvatarIcon id={avatarOf(pid)} /> {nameOf(pid)}</span>
               <span className="lu-home">{home}/4 home</span>
             </div>
           );

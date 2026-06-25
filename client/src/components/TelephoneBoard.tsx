@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { DrawStroke, PublicPlayer, TelephoneState } from '../../../shared/protocol.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const COLORS = ['#111018', '#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d', '#ff8c1a', '#7b61ff'];
 const WIDTHS = [4, 10, 20];
@@ -51,7 +52,7 @@ export function TelephoneBoard({
   onReveal: (dir: 'next' | 'prev') => void;
 }) {
   const nameOf = (id: string) => players.find((p) => p.id === id)?.name ?? 'Someone';
-  const avatarOf = (id: string) => players.find((p) => p.id === id)?.avatar ?? '👾';
+  const avatarOf = (id: string) => players.find((p) => p.id === id)?.avatar;
 
   const inGame = game.seating.includes(youId);
   const youSubmitted = game.submitted.includes(youId);
@@ -147,14 +148,14 @@ export function TelephoneBoard({
           )}
         </div>
         <p className="tp-reveal-owner">
-          {avatarOf(owner)} <b>{nameOf(owner)}</b> started it with…
+          <AvatarIcon id={avatarOf(owner)} /> <b>{nameOf(owner)}</b> started it with…
         </p>
 
         <div className="tp-album">
           {shown.map((page, i) => (
             <div key={i} className={`tp-page ${page.kind}`}>
               <span className="tp-page-author">
-                {avatarOf(page.authorId)} {nameOf(page.authorId)}{' '}
+                <AvatarIcon id={avatarOf(page.authorId)} /> {nameOf(page.authorId)}{' '}
                 {page.kind === 'drawing' ? 'drew' : i === 0 ? 'wrote' : 'guessed'}
               </span>
               {page.kind === 'text' ? (

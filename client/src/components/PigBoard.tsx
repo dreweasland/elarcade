@@ -1,5 +1,6 @@
 import { PigState, PublicPlayer } from '../../../shared/protocol.ts';
 import { RollingDie, useDiceReveal } from './RollingDie.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 export function PigBoard({
   game,
@@ -28,10 +29,10 @@ export function PigBoard({
   const turnText = game.winner
     ? ''
     : !canPlay
-      ? `${turnP?.avatar ?? ''} ${turnP?.name ?? ''}'s turn`
+      ? `${turnP?.name ?? ''}'s turn`
       : shownTurn === youId
         ? 'Your turn!'
-        : `${turnP?.avatar ?? ''} ${turnP?.name ?? 'Opponent'}'s turn`;
+        : `${turnP?.name ?? 'Opponent'}'s turn`;
 
   return (
     <div className="pig-table">
@@ -41,7 +42,7 @@ export function PigBoard({
           const p = playerById(id);
           return (
             <div key={id} className={`pig-score ${shownTurn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
-              <span className="pig-score-avatar">{p?.avatar}</span>
+              <span className="pig-score-avatar"><AvatarIcon id={p?.avatar} /></span>
               <span className="pig-score-name">{p?.name}</span>
               <span className="pig-score-num">{game.scores[id] ?? 0}</span>
             </div>

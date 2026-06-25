@@ -1,4 +1,5 @@
 import { MemoryState, PublicPlayer } from '../../../shared/protocol.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 export function MemoryBoard({
   game,
@@ -24,7 +25,7 @@ export function MemoryBoard({
           const p = playerById(id);
           return (
             <div key={id} className={`mem-score ${game.turn === id ? 'turn' : ''} ${id === youId ? 'you' : ''}`}>
-              <span className="mem-score-avatar">{p?.avatar}</span>
+              <span className="mem-score-avatar"><AvatarIcon id={p?.avatar} /></span>
               <span className="mem-score-name">{p?.name}</span>
               <span className="mem-score-pairs">{game.scores[id] ?? 0}</span>
             </div>
@@ -53,7 +54,7 @@ export function MemoryBoard({
               {faceUp ? (
                 <span className="mem-face">
                   {card.face}
-                  {owner && <span className="mem-owner">{owner.avatar}</span>}
+                  {owner && <span className="mem-owner"><AvatarIcon id={owner.avatar} /></span>}
                 </span>
               ) : (
                 <span className="mem-q" aria-hidden="true">

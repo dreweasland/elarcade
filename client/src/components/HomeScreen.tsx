@@ -10,6 +10,8 @@ import {
 } from '../../../shared/protocol.ts';
 import { useArcade } from '../useArcade.ts';
 import { sfx } from '../sounds.ts';
+import { GameIcon } from './GameIcon.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const NAME_KEY = 'el-arcade-name';
 const AVATAR_KEY = 'el-arcade-avatar';
@@ -31,9 +33,10 @@ const FILTERS: Filter[] = [
 export function HomeScreen() {
   const { state, arcade } = useArcade();
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) ?? '');
-  const [avatar, setAvatar] = useState(
-    () => localStorage.getItem(AVATAR_KEY) ?? AVATARS[0],
-  );
+  const [avatar, setAvatar] = useState<string>(() => {
+    const saved = localStorage.getItem(AVATAR_KEY);
+    return saved && (AVATARS as readonly string[]).includes(saved) ? saved : AVATARS[0];
+  });
   const [code, setCode] = useState(
     () => (new URLSearchParams(location.search).get('code') ?? '').toUpperCase().replace(/[^A-Z]/g, ''),
   );
@@ -78,7 +81,7 @@ export function HomeScreen() {
       <section className="panel identity">
         <div className="identity-row">
           <div className="avatar-preview" aria-hidden="true">
-            {avatar}
+            <AvatarIcon id={avatar} />
           </div>
           <input
             className="text-input"
@@ -103,7 +106,7 @@ export function HomeScreen() {
               }}
               aria-label={`avatar ${a}`}
             >
-              {a}
+              <AvatarIcon id={a} />
             </button>
           ))}
         </div>
@@ -141,7 +144,9 @@ export function HomeScreen() {
                   disabled={!ready || connecting}
                   onClick={() => createGame(g.id)}
                 >
-                  <span className="cabinet-icon">{g.icon}</span>
+                  <span className="cabinet-icon">
+                    <GameIcon id={g.id} />
+                  </span>
                   <span className="cabinet-name">{g.name}</span>
                   <span className="cabinet-players">{playerCountLabel(g)}</span>
                   <span className="cabinet-tag">{g.tagline}</span>

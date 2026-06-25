@@ -1,5 +1,6 @@
 import { CantStopState, PublicPlayer } from '../../../shared/protocol.ts';
 import { RollingDie, useDiceReveal } from './RollingDie.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const SEAT_COLORS = ['#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d'];
 const COLUMNS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -42,7 +43,7 @@ export function CantStopBoard({
     ? ''
     : canPlay && shownTurn === youId
       ? 'Your turn!'
-      : `${turnP?.avatar ?? ''} ${turnP?.name ?? 'Opponent'}'s turn`;
+      : `${turnP?.name ?? 'Opponent'}'s turn`;
 
   return (
     <div className="cs-table">
@@ -54,7 +55,7 @@ export function CantStopBoard({
           return (
             <span key={id} className={`cs-leg ${shownTurn === id ? 'turn' : ''}`}>
               <span className="cs-dot" style={{ background: colorOf(id) }} />
-              {p?.avatar} {claims}/{game.claimsToWin}
+              <AvatarIcon id={p?.avatar} /> {claims}/{game.claimsToWin}
             </span>
           );
         })}

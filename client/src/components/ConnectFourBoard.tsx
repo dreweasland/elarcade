@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { C4_COLS, C4_ROWS, ConnectFourState, PublicPlayer } from '../../../shared/protocol.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 export function ConnectFourBoard({
   game,
@@ -49,13 +50,13 @@ export function ConnectFourBoard({
               const winning = game.winningLine?.includes(i);
               return (
                 <span key={i} className={`c4-slot ${mark ? `disc-${mark}` : ''} ${winning ? 'winning' : ''}`}>
-                  {owner ? <span className="c4-disc">{owner.avatar}</span> : null}
+                  {owner ? <span className="c4-disc"><AvatarIcon id={owner.avatar} /></span> : null}
                 </span>
               );
             })}
             {playable && hoverCol === col && (
               <span className="c4-preview" aria-hidden="true">
-                {yourAvatar}
+                <AvatarIcon id={yourAvatar} />
               </span>
             )}
           </button>

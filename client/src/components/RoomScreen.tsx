@@ -20,6 +20,8 @@ import { OldMaidBoard } from './OldMaidBoard.tsx';
 import { RpsBoard } from './RpsBoard.tsx';
 import { CheckersBoard } from './CheckersBoard.tsx';
 import { LudoBoard } from './LudoBoard.tsx';
+import { GameIcon } from './GameIcon.tsx';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 export function RoomScreen() {
   const { state, arcade } = useArcade();
@@ -122,7 +124,7 @@ export function RoomScreen() {
       banner = 'Your turn!';
     } else {
       const t = room.players.find((p) => p.id === turnId);
-      banner = t ? `${t.avatar} ${t.name}'s turn` : 'Waiting…';
+      banner = t ? `${t.name}'s turn` : 'Waiting…';
     }
   } else if (room.status === 'finished' && g) {
     if (g.kind === 'telephone' || g.kind === 'fishbowl') banner = ''; // board shows its own wrap-up
@@ -326,7 +328,9 @@ export function RoomScreen() {
         />
       ) : (
         <div className="board-placeholder">
-          <span className="big-icon">{info.icon}</span>
+          <span className="big-icon">
+            <GameIcon id={room.game} />
+          </span>
           <WaitingLobby
             room={room}
             youId={state.youId}
@@ -544,7 +548,7 @@ function Scoreboard({
     <div className="scoreboard">
       {slots.map((p) => (
         <div key={p.id} className={`score-card ${p.id === youId ? 'you' : ''} ${p.connected ? '' : 'offline'}`}>
-          <span className="score-avatar">{p.avatar}</span>
+          <span className="score-avatar"><AvatarIcon id={p.avatar} /></span>
           <span className="score-name">
             {p.name}
             {p.id === youId ? ' (you)' : ''}

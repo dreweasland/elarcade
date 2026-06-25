@@ -46,7 +46,7 @@ interface Room {
 }
 
 const BOT_NAMES = ['Robo', 'Bleep', 'Chip', 'Gizmo'];
-const BOT_AVATARS = ['🤖', '👾', '🐲', '🚀'];
+const BOT_AVATARS = ['opossum', 'ferret', 'dog', 'duck'];
 const BOT_MOVE_MS = 1000; // pacing so CPU moves feel natural & animations play
 
 /** Per-socket bookkeeping so we can find a socket's room/player on any message. */
@@ -523,7 +523,7 @@ export class RoomManager {
     return {
       id: randomId(8),
       name: sanitizeName(identity.name),
-      avatar: identity.avatar || '👾',
+      avatar: identity.avatar || 'duck',
       token: `${code}.${randomId(24)}`,
       ws,
     };

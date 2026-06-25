@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { DotsState, PublicPlayer } from '../../../shared/protocol.ts';
+import { AvatarIcon } from './AvatarIcon.tsx';
 
 const SEAT_COLORS = ['#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d'];
 
@@ -107,7 +108,7 @@ export function DotsBoard({
             className={`box ${freshBoxes.has(boxIdx) ? 'fresh' : ''}`}
             style={owner ? { background: `${colorOf(owner)}33`, color: colorOf(owner) } : undefined}
           >
-            {op?.avatar}
+            {op && <AvatarIcon id={op.avatar} />}
           </span>,
         );
       }
@@ -127,7 +128,7 @@ export function DotsBoard({
             >
               <span className="dots-dot" style={{ background: colorOf(id) }} />
               <span className="dots-score-name">
-                {p?.avatar} {p?.name}
+                <AvatarIcon id={p?.avatar} /> {p?.name}
               </span>
               <span className="dots-score-num">{game.scores[id] ?? 0}</span>
             </div>
