@@ -9,7 +9,7 @@
  * Avatar ids chosen on the home screen. Each maps to a hand-made SVG animal
  * (see client AvatarIcon). Add new animals here and in AvatarIcon together.
  */
-export const AVATARS = ['duck', 'opossum', 'dog', 'ferret'] as const;
+export const AVATARS = ['duck', 'opossum', 'dog', 'ferret', 'emerson'] as const;
 export type Avatar = (typeof AVATARS)[number];
 export const DEFAULT_AVATAR: Avatar = 'duck';
 

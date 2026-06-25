@@ -49,6 +49,19 @@ const ART: Record<string, ReactNode> = {
       <circle cx="12" cy="15.4" r="1.3" fill="#e394ad" />
     </>
   ),
+  // Emerson — traced from his photo: short light-brown hair, little smile.
+  emerson: (
+    <>
+      <circle cx="5.6" cy="13.5" r="1.5" fill="#f0c4a0" />
+      <circle cx="18.4" cy="13.5" r="1.5" fill="#f0c4a0" />
+      <circle cx="12" cy="13" r="7" fill="#f4caa3" />
+      <path d="M5 12.6Q5 4.8 12 4.8Q19 4.8 19 12.6Q16 9.6 12 9.9Q8 9.6 5 12.6Z" fill="#a9885a" />
+      <circle cx="9.6" cy="13" r="1" fill="#3a2c20" />
+      <circle cx="14.4" cy="13" r="1" fill="#3a2c20" />
+      <path d="M8.3 11.4 10.6 11.2M13.4 11.2 15.7 11.4" stroke="#8a6a3f" strokeWidth="0.9" strokeLinecap="round" fill="none" />
+      <path d="M10.2 16.1Q12 17.5 13.8 16.1" stroke="#bf6f55" strokeWidth="1" strokeLinecap="round" fill="none" />
+    </>
+  ),
 };
 
 const DEFAULT = 'duck';
