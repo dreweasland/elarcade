@@ -92,7 +92,10 @@ export function applyDotsMove(state: DotsState, playerId: string, move: DotsMove
 
   next.moves++;
 
-  if (next.owners.every((o) => o !== null)) {
+  // The board is done when every line is drawn. We key off edges, not owned
+  // boxes, so a mid-game leaver's freed boxes (owner reset to null but still
+  // fully enclosed, hence never re-claimable) can't stall the terminal check.
+  if (boardFull(next)) {
     next.winner = highestScorer(next.seating, next.scores);
     next.turn = null;
   } else if (completed === 0) {
@@ -101,6 +104,10 @@ export function applyDotsMove(state: DotsState, playerId: string, move: DotsMove
   }
 
   return { state: next };
+}
+
+function boardFull(state: DotsState): boolean {
+  return state.hEdges.every(Boolean) && state.vEdges.every(Boolean);
 }
 
 function boxComplete(state: DotsState, br: number, bc: number): boolean {
