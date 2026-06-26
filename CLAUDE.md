@@ -35,6 +35,9 @@ non-obvious things that bite when extending the codebase.
     keep the fixed roster but track an **`absent`** list (the album/team rotation depends on a
     fixed n) — absent players aren't waited on, are skipped as clue-giver/reveal-host, and
     their Telephone pages fill in as blanks. Only 2-player games end the round on a leave.
+    This runs on an explicit leave **and** when a disconnect's grace timer expires
+    (`DISCONNECT_GRACE_MS`, ~45s) — a closed tab holds the seat briefly for reconnect, then
+    drops the player so they can't stall the room. Reconnecting (rejoin) cancels the timer.
 
 ## Gotchas the README glosses over
 

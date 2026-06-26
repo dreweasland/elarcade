@@ -44,9 +44,15 @@ interface Room {
   gameTimer: NodeJS.Timeout | null;
   /** Pending CPU move timer (one bot action in flight at a time). */
   botTimer: NodeJS.Timeout | null;
+  /** Per-player grace timers: a prolonged disconnect drops them from the game. */
+  disconnectTimers: Map<string, NodeJS.Timeout>;
 }
 
 const BOT_NAMES = ['Robo', 'Bleep', 'Chip', 'Gizmo'];
+// How long a disconnected player's seat is held before they're dropped from the
+// active game (so a closed tab can't stall everyone). Longer than the client's
+// reconnect-with-backoff window (~35s) so genuine blips reconnect in time.
+const DISCONNECT_GRACE_MS = 45 * 1000;
 const BOT_AVATARS = ['opossum', 'ferret', 'dog', 'duck'];
 const BOT_MOVE_MS = 1000; // pacing so CPU moves feel natural & animations play
 
@@ -126,7 +132,10 @@ export class RoomManager {
       room.spectators.delete(ws);
     } else {
       const player = room.players.find((p) => p.id === meta.playerId);
-      if (player) player.ws = null; // keep the seat for a reconnect
+      if (player) {
+        player.ws = null; // keep the seat for a reconnect…
+        this.scheduleDisconnectRemoval(room, player.id); // …but not forever
+      }
     }
     this.sockets.delete(ws);
     this.stopBots(room); // pause CPUs until a human is back
@@ -160,6 +169,7 @@ export class RoomManager {
       emptyTimer: null,
       gameTimer: null,
       botTimer: null,
+      disconnectTimers: new Map(),
     };
     this.rooms.set(code, room);
     this.sockets.set(ws, { roomCode: code, playerId: player.id, spectator: false });
@@ -213,6 +223,7 @@ export class RoomManager {
       if (!player) continue;
       player.ws = ws;
       this.sockets.set(ws, { roomCode: room.code, playerId: player.id, spectator: false });
+      this.clearDisconnectTimer(room, player.id); // they're back in time
       this.cancelCleanup(room);
       this.send(ws, {
         type: 'joined',
@@ -467,37 +478,67 @@ export class RoomManager {
     if (meta.spectator) {
       room.spectators.delete(ws);
     } else {
-      // Leaving the seat entirely (not a reconnect).
-      room.players = room.players.filter((p) => p.id !== meta.playerId);
-      delete room.scores[meta.playerId];
-      room.rematchReady.delete(meta.playerId);
-      // If a game was underway, try to drop just this player so the rest keep
-      // playing (3-4 player games). If the game can't continue without them
-      // (2-player games, or it drops below minPlayers), end the round.
-      if (room.status === 'playing' && room.gameState) {
-        const mod = GAME_MODULES[room.game];
-        const continued = mod.removePlayer
-          ? mod.removePlayer(room.gameState, meta.playerId)
-          : null;
-        if (continued) {
-          room.gameState = continued;
-          this.settleResult(room);
-          this.scheduleBots(room); // the new current player may be a CPU
-        } else {
-          room.status = 'waiting';
-          room.gameState = null;
-          this.stopGameTimer(room);
-          this.stopBots(room);
-        }
-      }
-      // A lone human left with only bots behind — clear the bots out too.
-      if (room.players.every((p) => p.isBot)) {
-        room.players = [];
-        room.scores = {};
-      }
+      this.removeSeatedPlayer(room, meta.playerId);
     }
     this.scheduleCleanupIfEmpty(room);
     this.broadcast(room);
+  }
+
+  /**
+   * Remove a seated player from a room's roster and active game — keeping the
+   * game going for the rest when possible (via the game's `removePlayer`), or
+   * ending the round when it can't continue. Used by explicit leave, by
+   * re-association, and when a disconnect's grace period expires.
+   */
+  private removeSeatedPlayer(room: Room, playerId: string): void {
+    if (!room.players.some((p) => p.id === playerId)) return;
+    this.clearDisconnectTimer(room, playerId);
+    room.players = room.players.filter((p) => p.id !== playerId);
+    delete room.scores[playerId];
+    room.rematchReady.delete(playerId);
+    // Try to drop just this player so the rest keep playing; if the game can't
+    // continue without them (2-player games, or it drops below minPlayers), end.
+    if (room.status === 'playing' && room.gameState) {
+      const mod = GAME_MODULES[room.game];
+      const continued = mod.removePlayer ? mod.removePlayer(room.gameState, playerId) : null;
+      if (continued) {
+        room.gameState = continued;
+        this.settleResult(room);
+        this.scheduleBots(room); // the new current player may be a CPU
+      } else {
+        room.status = 'waiting';
+        room.gameState = null;
+        this.stopGameTimer(room);
+        this.stopBots(room);
+      }
+    }
+    // A lone human left with only bots behind — clear the bots out too.
+    if (room.players.every((p) => p.isBot)) {
+      room.players = [];
+      room.scores = {};
+    }
+  }
+
+  /** After a grace period, drop a still-disconnected player so play continues. */
+  private scheduleDisconnectRemoval(room: Room, playerId: string): void {
+    this.clearDisconnectTimer(room, playerId);
+    const timer = setTimeout(() => {
+      room.disconnectTimers.delete(playerId);
+      const player = room.players.find((p) => p.id === playerId);
+      if (!player || player.ws !== null) return; // gone, or reconnected in time
+      this.removeSeatedPlayer(room, playerId);
+      this.scheduleCleanupIfEmpty(room);
+      this.broadcast(room);
+    }, DISCONNECT_GRACE_MS);
+    room.disconnectTimers.set(playerId, timer);
+  }
+
+  private clearDisconnectTimer(room: Room, playerId: string): void {
+    const timer = room.disconnectTimers.get(playerId);
+    if (timer) {
+      clearTimeout(timer);
+      room.disconnectTimers.delete(playerId);
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -620,6 +661,9 @@ export class RoomManager {
     this.cancelCleanup(room);
     room.emptyTimer = setTimeout(() => {
       this.stopGameTimer(room);
+      this.stopBots(room);
+      for (const t of room.disconnectTimers.values()) clearTimeout(t);
+      room.disconnectTimers.clear();
       this.rooms.delete(room.code);
     }, ROOM_EMPTY_GRACE_MS);
   }
