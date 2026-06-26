@@ -271,7 +271,6 @@ export function RoomScreen() {
           game={g}
           players={room.players}
           youId={state.youId}
-          hostId={room.hostId}
           canPlay={!isSpectator}
           onSubmitText={(text) => arcade.move({ action: 'submitText', text })}
           onSubmitDrawing={(strokes) => arcade.move({ action: 'submitDrawing', strokes })}

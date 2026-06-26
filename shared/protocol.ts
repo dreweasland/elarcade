@@ -654,6 +654,9 @@ export interface TelephoneState {
   albums: TelephonePage[][];
   /** Player ids who have submitted their page for the current round. */
   submitted: string[];
+  /** Seated players who left mid-game — kept in `seating` (the album rotation
+   *  is fixed at n) but no longer waited on; their pages fill in as blanks. */
+  absent: string[];
   /** Reveal phase: which album is shown, and how many of its pages are visible. */
   revealAlbum: number;
   revealPage: number;
@@ -714,6 +717,9 @@ export interface FishbowlState {
   scores: [number, number];
   /** Player ids who have tossed their words in (writing phase). */
   submitted: string[];
+  /** Seated players who left mid-game — skipped as clue-givers and not waited
+   *  on to start play; their words stay in the bowl. */
+  absent: string[];
   /** Server-only: each player's words before they're shuffled in. Redacted. */
   pending?: Record<string, string[]>;
   winner: string | 'draw' | null;

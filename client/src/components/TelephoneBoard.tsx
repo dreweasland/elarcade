@@ -36,7 +36,6 @@ export function TelephoneBoard({
   game,
   players,
   youId,
-  hostId,
   canPlay,
   onSubmitText,
   onSubmitDrawing,
@@ -45,7 +44,6 @@ export function TelephoneBoard({
   game: TelephoneState;
   players: PublicPlayer[];
   youId: string;
-  hostId: string;
   canPlay: boolean;
   onSubmitText: (text: string) => void;
   onSubmitDrawing: (strokes: DrawStroke[]) => void;
@@ -56,7 +54,10 @@ export function TelephoneBoard({
 
   const inGame = game.seating.includes(youId);
   const youSubmitted = game.submitted.includes(youId);
-  const total = game.seating.length;
+  const absent = game.absent ?? [];
+  const total = game.seating.filter((s) => !absent.includes(s)).length; // players still in
+  // Reveal is driven by the first seat that's still present (host may have left).
+  const revealHost = game.seating.find((s) => !absent.includes(s)) ?? game.seating[0];
 
   // ----- interactive drawing canvas -----
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -139,7 +140,7 @@ export function TelephoneBoard({
     const album = game.albums[game.revealAlbum] ?? [];
     const shown = game.phase === 'over' ? album : album.slice(0, game.revealPage);
     const owner = game.seating[game.revealAlbum];
-    const isHost = youId === hostId;
+    const isHost = youId === revealHost;
     const atEnd =
       game.revealPage >= album.length && game.revealAlbum >= game.albums.length - 1;
 
@@ -188,7 +189,7 @@ export function TelephoneBoard({
               </button>
             </div>
           ) : (
-            <p className="tp-watching">{nameOf(hostId)} is running the reveal…</p>
+            <p className="tp-watching">{nameOf(revealHost)} is running the reveal…</p>
           ))}
         {game.phase === 'over' && <p className="tp-fin">That's a wrap! Play again for new chaos.</p>}
       </div>

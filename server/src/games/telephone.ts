@@ -18,6 +18,7 @@ export function createTelephone(playerIds: string[]): TelephoneState {
     secondsLeft: WRITE_SECONDS,
     albums: seating.map(() => [] as TelephonePage[]),
     submitted: [],
+    absent: [],
     revealAlbum: 0,
     revealPage: 0,
     youRespondTo: null,
@@ -48,10 +49,10 @@ export function applyTelephoneMove(
 ): MoveResult {
   if (state.winner || state.phase === 'over') return { state, error: 'The game is over.' };
 
-  // Reveal stepping — only the host (seating[0]) drives it.
+  // Reveal stepping — only the host (first still-present seat) drives it.
   if (move.action === 'reveal') {
     if (state.phase !== 'reveal') return { state, error: 'Not revealing yet.' };
-    if (playerId !== state.seating[0]) return { state, error: 'Only the host runs the reveal.' };
+    if (playerId !== revealHost(state)) return { state, error: 'Only the host runs the reveal.' };
     const next: TelephoneState = structuredClone(state);
     stepReveal(next, move.dir);
     return { state: next };
@@ -81,8 +82,36 @@ export function applyTelephoneMove(
   next.albums[albumIdx][next.round] = page;
   next.submitted.push(playerId);
 
-  if (next.submitted.length >= n) advance(next);
+  if (roundComplete(next)) advance(next);
   return { state: next };
+}
+
+/** Players still in the game (seated and not departed). */
+function presentSeats(state: TelephoneState): string[] {
+  return state.seating.filter((s) => !state.absent.includes(s));
+}
+
+/** The round advances once every present player has submitted. */
+function roundComplete(state: TelephoneState): boolean {
+  const present = presentSeats(state);
+  return present.length > 0 && present.every((p) => state.submitted.includes(p));
+}
+
+/** Who drives the reveal: the first seat that's still present. */
+function revealHost(state: TelephoneState): string {
+  return state.seating.find((s) => !state.absent.includes(s)) ?? state.seating[0];
+}
+
+/** Drop a player mid-game. Keeps the fixed album rotation (their pages become
+ *  blanks); returns null if fewer than two players remain. */
+export function removeTelephonePlayer(state: TelephoneState, id: string): TelephoneState | null {
+  if (!state.seating.includes(id) || state.absent.includes(id)) return state;
+  const next: TelephoneState = structuredClone(state);
+  next.absent.push(id);
+  if (presentSeats(next).length < 2) return null; // not enough to keep going
+  // Their departure may complete the current writing/drawing round.
+  if (next.phase !== 'reveal' && roundComplete(next)) advance(next);
+  return next;
 }
 
 /** Server-driven countdown (~1/sec). Submissions that don't arrive get blanks. */

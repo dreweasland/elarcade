@@ -32,6 +32,8 @@ export function FishbowlBoard({
 }) {
   const nameOf = (id: string | null) => players.find((p) => p.id === id)?.name ?? 'Someone';
   const avatarOf = (id: string | null) => players.find((p) => p.id === id)?.avatar;
+  // Count only players still in the game (someone may have left mid-game).
+  const presentCount = game.seating.filter((s) => !(game.absent ?? []).includes(s)).length;
 
   const inGame = game.seating.includes(youId);
   const yourTeam = inGame ? game.teams[youId] : null;
@@ -66,7 +68,7 @@ export function FishbowlBoard({
         <div className="fb-board">
           <p className="fb-phase-title">Filling the bowl…</p>
           <p className="fb-wait">
-            {game.submitted.length}/{game.seating.length} players have tossed in their words.
+            {game.submitted.length}/{presentCount} players have tossed in their words.
           </p>
         </div>
       );
@@ -76,7 +78,7 @@ export function FishbowlBoard({
         <div className="fb-board">
           <p className="fb-phase-title">Filling the bowl…</p>
           <p className="fb-done">
-            Your words are in! Waiting for the rest… ({game.submitted.length}/{game.seating.length})
+            Your words are in! Waiting for the rest… ({game.submitted.length}/{presentCount})
           </p>
         </div>
       );

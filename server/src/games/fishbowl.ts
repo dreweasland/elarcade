@@ -34,6 +34,7 @@ export function createFishbowl(playerIds: string[], options?: GameOptions): Fish
     turnCorrect: 0,
     scores: [0, 0],
     submitted: [],
+    absent: [],
     pending: {},
     winner: null,
     moves: 0,
@@ -64,7 +65,7 @@ export function applyFishbowlMove(
     const next: FishbowlState = structuredClone(state);
     next.pending![playerId] = words;
     next.submitted.push(playerId);
-    if (next.submitted.length >= next.seating.length) openPlay(next);
+    if (allPresentSubmitted(next)) openPlay(next);
     return { state: next };
   }
 
@@ -150,13 +151,20 @@ export function viewFishbowl(state: FishbowlState, viewerId: string | null): Fis
 // Internals
 // ---------------------------------------------------------------------------
 
+/** Team members who are still present (haven't left mid-game). */
 function teamMembers(state: FishbowlState, team: 0 | 1): string[] {
-  return state.seating.filter((id) => state.teams[id] === team);
+  return state.seating.filter((id) => state.teams[id] === team && !state.absent.includes(id));
 }
 
 function setClueGiver(state: FishbowlState): void {
   const members = teamMembers(state, state.activeTeam);
   state.clueGiver = members.length ? members[state.turnPointer[state.activeTeam] % members.length] : null;
+}
+
+/** Writing is done once every present player has tossed their words in. */
+function allPresentSubmitted(state: FishbowlState): boolean {
+  const present = state.seating.filter((id) => !state.absent.includes(id));
+  return present.length > 0 && present.every((id) => state.submitted.includes(id));
 }
 
 /** Close writing: shuffle every word into the bowl and tee up the first turn. */
@@ -210,6 +218,41 @@ function endTurn(state: FishbowlState): void {
   state.secondsLeft = state.turnSeconds;
   state.currentWord = null;
   state.turnCorrect = 0;
+}
+
+/** Drop a player mid-game. Keeps the bowl/teams; returns null if the game can
+ *  no longer run (fewer than 2 left, or a team has no one left to give clues). */
+export function removeFishbowlPlayer(state: FishbowlState, id: string): FishbowlState | null {
+  if (!state.seating.includes(id) || state.absent.includes(id)) return state;
+  const next: FishbowlState = structuredClone(state);
+  next.absent.push(id);
+
+  const present = next.seating.filter((s) => !next.absent.includes(s));
+  if (present.length < 2) return null;
+  // Both teams need at least one present member to keep giving/guessing clues.
+  if (teamMembers(next, 0).length === 0 || teamMembers(next, 1).length === 0) return null;
+
+  if (next.phase === 'writing') {
+    if (allPresentSubmitted(next)) openPlay(next);
+    return next;
+  }
+
+  // In play: only matters if the clue-giver themselves left.
+  if (state.clueGiver === id) {
+    if (next.phase === 'clue') {
+      // Their turn is abandoned — return the live word and pass to the other team.
+      if (next.currentWord) {
+        next.bowl!.push(next.currentWord);
+        next.currentWord = null;
+        next.bowlCount = next.bowl!.length;
+      }
+      endTurn(next);
+    } else {
+      // 'ready' — hand the turn to a present teammate before they start.
+      setClueGiver(next);
+    }
+  }
+  return next;
 }
 
 function finish(state: FishbowlState): void {

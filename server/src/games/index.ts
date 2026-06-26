@@ -16,8 +16,20 @@ import {
 import { applyZombieMove, createZombie, removeZombiePlayer, viewZombie } from './zombie.js';
 import { applyChutesMove, createChutes, removeChutesPlayer } from './chutes.js';
 import { applyCantStopMove, createCantStop, removeCantStopPlayer } from './cantstop.js';
-import { applyTelephoneMove, createTelephone, tickTelephone, viewTelephone } from './telephone.js';
-import { applyFishbowlMove, createFishbowl, tickFishbowl, viewFishbowl } from './fishbowl.js';
+import {
+  applyTelephoneMove,
+  createTelephone,
+  removeTelephonePlayer,
+  tickTelephone,
+  viewTelephone,
+} from './telephone.js';
+import {
+  applyFishbowlMove,
+  createFishbowl,
+  removeFishbowlPlayer,
+  tickFishbowl,
+  viewFishbowl,
+} from './fishbowl.js';
 import { applyGoFishMove, createGoFish, viewGoFish } from './gofish.js';
 import { applyOldMaidMove, createOldMaid, viewOldMaid } from './oldmaid.js';
 import { applyRpsMove, createRps, viewRps } from './rps.js';
@@ -142,12 +154,14 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     applyMove: (state, playerId, move) => applyTelephoneMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewTelephone(state as any, viewerId),
     tick: (state) => tickTelephone(state as any),
+    removePlayer: (state, id) => removeTelephonePlayer(state as any, id),
   },
   fishbowl: {
     createState: (ids, _first, options) => createFishbowl(ids, options),
     applyMove: (state, playerId, move) => applyFishbowlMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewFishbowl(state as any, viewerId),
     tick: (state) => tickFishbowl(state as any),
+    removePlayer: (state, id) => removeFishbowlPlayer(state as any, id),
   },
   gofish: {
     createState: (ids, first) => createGoFish(ids, first),

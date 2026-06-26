@@ -27,12 +27,14 @@ non-obvious things that bite when extending the codebase.
     `changed:true` to broadcast. Used by timed games (Draw & Guess, Telephone).
   - **`botMove(state, botId)`** — CPU opponent; return the move to make now or `null`.
     Driven on a ~1s timer; chains for push-your-luck/multi-bot turns. (`server/src/games/bots.ts`)
-  - **`removePlayer(state, playerId)`** — drop a player mid-game so 3-4 player games keep
-    going; return the new state, or `null` if too few remain (the room ends the round).
-    Built on the `removeSeat` helper (`server/src/games/seating.ts`). Implemented for the
-    turn-based multiplayer games incl. Draw & Guess (whose drawer-relative rotation tolerates
-    a mid-game leave). Omit for 2-player games and Telephone/Fishbowl (fixed-roster
-    album/team rotation can't drop a player cleanly), which end the round on a leave.
+  - **`removePlayer(state, playerId)`** — drop a player mid-game so the rest keep going;
+    return the new state, or `null` if too few remain (the room ends the round). Implemented
+    for **every multiplayer game**. Turn-based games (UNO, Memory, Pig, Dots, Zombie, Chutes,
+    Can't Stop, Ludo, Draw & Guess) actually remove the seat via the `removeSeat` helper
+    (`server/src/games/seating.ts`), advancing the turn off the leaver. Telephone & Fishbowl
+    keep the fixed roster but track an **`absent`** list (the album/team rotation depends on a
+    fixed n) — absent players aren't waited on, are skipped as clue-giver/reveal-host, and
+    their Telephone pages fill in as blanks. Only 2-player games end the round on a leave.
 
 ## Gotchas the README glosses over
 
