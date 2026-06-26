@@ -161,7 +161,11 @@ export function RoomScreen() {
     <div className="room-screen">
       <RoomHeader code={room.code} game={info.name} spectators={room.spectators} />
 
-      <Scoreboard room={room} youId={state.youId} />
+      {/* Session win-counter scoreboard — meaningless for the non-competitive
+          games (always 0-0), whose own boards already show the roster. */}
+      {!(g && (g.kind === 'telephone' || g.kind === 'fishbowl')) && (
+        <Scoreboard room={room} youId={state.youId} />
+      )}
 
       <p className={`banner ${room.status}`}>{banner}</p>
       {sunkNote && <p className="sunk-note">{sunkNote}</p>}

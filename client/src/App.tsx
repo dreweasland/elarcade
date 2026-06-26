@@ -4,6 +4,7 @@ import { HomeScreen } from './components/HomeScreen.tsx';
 import { RoomScreen } from './components/RoomScreen.tsx';
 import { MuteButton } from './components/MuteButton.tsx';
 import { ErrorToast } from './components/ErrorToast.tsx';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 
 export function App() {
   const { state, arcade } = useArcade();
@@ -25,7 +26,9 @@ export function App() {
         <MuteButton />
       </header>
 
-      <main className="stage">{inRoom ? <RoomScreen /> : <HomeScreen />}</main>
+      <main className="stage">
+        <ErrorBoundary>{inRoom ? <RoomScreen /> : <HomeScreen />}</ErrorBoundary>
+      </main>
 
       <ErrorToast message={state.error} onDismiss={() => arcade.dismissError()} />
     </div>

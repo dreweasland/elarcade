@@ -105,9 +105,16 @@ export function TelephoneBoard({
   function onUp() {
     if (!drawingRef.current) return;
     drawingRef.current = false;
-    if (ptsRef.current.length >= 2) {
-      strokesRef.current.push({ color, width, points: ptsRef.current.slice() });
+    const pts = ptsRef.current;
+    if (pts.length >= 2) {
+      strokesRef.current.push({ color, width, points: pts.slice() });
       setStrokeCount(strokesRef.current.length);
+      // A tap (single point) is never painted by onMove — draw the dot now so
+      // the artist sees it, matching what gets submitted.
+      if (pts.length === 2) {
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx) paintStroke(ctx, { color, width, points: [pts[0], pts[1]] });
+      }
     }
     ptsRef.current = [];
   }

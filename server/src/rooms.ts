@@ -59,16 +59,20 @@ interface SocketMeta {
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // no I/O to avoid confusion
 const ROOM_EMPTY_GRACE_MS = 5 * 60 * 1000; // keep an empty room alive 5 min for reconnects
+const MSG_LIMIT = 60; // max messages/sec per socket (~3x the busiest legit path)
 
 export class RoomManager {
   private rooms = new Map<string, Room>();
   private sockets = new WeakMap<WebSocket, SocketMeta>();
+  private msgRate = new WeakMap<WebSocket, { windowStart: number; count: number }>();
 
   // -------------------------------------------------------------------------
   // Connection lifecycle
   // -------------------------------------------------------------------------
 
   handleMessage(ws: WebSocket, raw: string): void {
+    if (this.rateLimited(ws)) return; // drop floods before doing any work
+
     let msg: unknown;
     try {
       msg = JSON.parse(raw);
@@ -192,10 +196,12 @@ export class RoomManager {
     this.send(ws, { type: 'joined', code, youId: player.id, token: player.token, role: 'player' });
 
     // Fixed-roster games (exactly N players, like the 2-player games) auto-start
-    // when full. Variable-roster games (UNO, Memory) always wait for the host so
-    // they can choose when to begin and pick options.
+    // once full — whether the room was waiting or finished (a newcomer filling
+    // the open seat of a finished game starts a fresh round, not the stale one).
+    // Variable-roster games (UNO, Memory) always wait for the host so they can
+    // choose when to begin and pick options.
     const fixedRoster = info.minPlayers === info.maxPlayers;
-    if (room.status === 'waiting' && fixedRoster && room.players.length >= info.maxPlayers) {
+    if (room.status !== 'playing' && fixedRoster && room.players.length >= info.maxPlayers) {
       this.startRound(room);
     }
     this.broadcast(room);
@@ -314,7 +320,16 @@ export class RoomManager {
     room.rematchReady.add(meta.playerId);
     // Start again once every human seat is ready (bots are always ready).
     if (room.players.every((p) => p.isBot || room.rematchReady.has(p.id))) {
-      this.startRound(room);
+      if (room.players.length >= GAMES[room.game].minPlayers) {
+        this.startRound(room);
+      } else {
+        // Someone left the finished game — not enough to replay. Back to the
+        // lobby so the remaining player can share the code or add a CPU.
+        room.status = 'waiting';
+        room.gameState = null;
+        room.rematchReady.clear();
+        this.stopGameTimer(room);
+      }
     }
     this.broadcast(room);
   }
@@ -568,8 +583,8 @@ export class RoomManager {
   private newPlayer(ws: WebSocket, code: string, identity: PlayerIdentity): PlayerRecord {
     return {
       id: randomId(8),
-      name: sanitizeName(identity.name),
-      avatar: sanitizeAvatar(identity.avatar),
+      name: sanitizeName(identity?.name),
+      avatar: sanitizeAvatar(identity?.avatar),
       token: `${code}.${randomId(24)}`,
       ws,
     };
@@ -611,6 +626,18 @@ export class RoomManager {
   private sendRaw(ws: WebSocket, data: string): void {
     if (ws.readyState === ws.OPEN) ws.send(data);
   }
+
+  /** Fixed-window flood guard: true once a socket exceeds MSG_LIMIT msgs/sec. */
+  private rateLimited(ws: WebSocket): boolean {
+    const now = Date.now();
+    const r = this.msgRate.get(ws);
+    if (!r || now - r.windowStart >= 1000) {
+      this.msgRate.set(ws, { windowStart: now, count: 1 });
+      return false;
+    }
+    r.count++;
+    return r.count > MSG_LIMIT;
+  }
 }
 
 function randomId(len: number): string {
@@ -620,12 +647,14 @@ function randomId(len: number): string {
   return out;
 }
 
-function sanitizeName(name: string): string {
+function sanitizeName(name: string | undefined): string {
   const clean = (name || '').replace(/\s+/g, ' ').trim().slice(0, 16);
   return clean || 'Player';
 }
 
 /** Only accept a known avatar id; fall back to the default for anything else. */
-function sanitizeAvatar(avatar: string): string {
-  return (AVATARS as readonly string[]).includes(avatar) ? avatar : DEFAULT_AVATAR;
+function sanitizeAvatar(avatar: string | undefined): string {
+  return avatar !== undefined && (AVATARS as readonly string[]).includes(avatar)
+    ? avatar
+    : DEFAULT_AVATAR;
 }
