@@ -43,6 +43,8 @@ export interface GameOptions {
   dice?: 1 | 2;
   /** Fishbowl: how many words each player adds to the bowl (default 3). */
   words?: number;
+  /** Draw & Guess: how many times each player draws (default 1). */
+  rounds?: number;
 }
 
 /** Genre buckets used to group & filter the lobby. */

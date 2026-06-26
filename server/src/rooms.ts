@@ -355,6 +355,7 @@ export class RoomManager {
       }
       if (options.dice === 1 || options.dice === 2) clean.dice = options.dice;
       if (typeof options.words === 'number') clean.words = options.words;
+      if (typeof options.rounds === 'number') clean.rounds = options.rounds;
       room.options = clean;
     }
     this.startRound(room);

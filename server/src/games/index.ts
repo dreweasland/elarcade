@@ -6,7 +6,13 @@ import { applyUnoMove, createUno, removeUnoPlayer, viewUno } from './uno.js';
 import { applyMemoryMove, createMemory, removeMemoryPlayer, viewMemory } from './memory.js';
 import { applyPigMove, createPig, removePigPlayer } from './pig.js';
 import { applyDotsMove, createDots, removeDotsPlayer } from './dots.js';
-import { applyDrawGuessMove, createDrawGuess, tickDrawGuess, viewDrawGuess } from './drawguess.js';
+import {
+  applyDrawGuessMove,
+  createDrawGuess,
+  removeDrawGuessPlayer,
+  tickDrawGuess,
+  viewDrawGuess,
+} from './drawguess.js';
 import { applyZombieMove, createZombie, removeZombiePlayer, viewZombie } from './zombie.js';
 import { applyChutesMove, createChutes, removeChutesPlayer } from './chutes.js';
 import { applyCantStopMove, createCantStop, removeCantStopPlayer } from './cantstop.js';
@@ -108,10 +114,11 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     removePlayer: (state, id) => removeDotsPlayer(state as any, id),
   },
   drawguess: {
-    createState: (ids, first) => createDrawGuess(ids, first),
+    createState: (ids, first, options) => createDrawGuess(ids, first, options),
     applyMove: (state, playerId, move) => applyDrawGuessMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewDrawGuess(state as any, viewerId),
     tick: (state) => tickDrawGuess(state as any),
+    removePlayer: (state, id) => removeDrawGuessPlayer(state as any, id),
   },
   zombie: {
     createState: (ids, first) => createZombie(ids, first),

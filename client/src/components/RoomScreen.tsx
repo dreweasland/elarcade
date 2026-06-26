@@ -389,6 +389,7 @@ function WaitingLobby({
   const [size, setSize] = useState<Size>('medium');
   const [dice, setDice] = useState<1 | 2>(1);
   const [words, setWords] = useState(3);
+  const [rounds, setRounds] = useState(1);
 
   const botCount = room.players.filter((p) => p.isBot).length;
   const roomFull = room.players.length >= info.maxPlayers;
@@ -411,6 +412,7 @@ function WaitingLobby({
   const startOptions = (): GameOptions | undefined => {
     if (room.game === 'pig') return { dice };
     if (room.game === 'fishbowl') return { words };
+    if (room.game === 'drawguess') return { rounds };
     if (sizeInfo) return { size };
     return undefined;
   };
@@ -453,6 +455,23 @@ function WaitingLobby({
                 >
                   <b>{n} Words</b>
                   <span>{n * room.players.length} in the bowl</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {room.game === 'drawguess' && (
+          <div className="size-picker">
+            <span className="field-label">Rounds each</span>
+            <div className="size-options">
+              {[1, 2, 3].map((n) => (
+                <button
+                  key={n}
+                  className={`size-btn ${rounds === n ? 'selected' : ''}`}
+                  onClick={() => setRounds(n)}
+                >
+                  <b>{n}×</b>
+                  <span>{n * room.players.length} turns total</span>
                 </button>
               ))}
             </div>

@@ -1,19 +1,29 @@
-import { DrawGuessMove, DrawGuessState } from '../../../shared/protocol.js';
+import { DrawGuessMove, DrawGuessState, GameOptions } from '../../../shared/protocol.js';
 import { highestScorer } from './score.js';
 
 const ROUND_SECONDS = 75;
 const REVEAL_SECONDS = 6;
 const MAX_STROKES = 4000;
 const MAX_CHAT = 24;
+const MAX_ROUNDS_PER_PLAYER = 5;
 
-// Kid-friendly, drawable words.
+// Drawable words. Easy ones first, then a harder/newer batch for variety.
 const WORDS = [
+  // easy
   'cat', 'dog', 'sun', 'tree', 'house', 'car', 'boat', 'fish', 'star', 'apple',
   'pizza', 'rocket', 'robot', 'flower', 'snake', 'bird', 'ball', 'hat', 'cake', 'moon',
   'rainbow', 'banana', 'cookie', 'dragon', 'ghost', 'crown', 'guitar', 'ice cream', 'butterfly', 'spider',
   'shark', 'turtle', 'frog', 'duck', 'bee', 'cloud', 'train', 'plane', 'kite', 'sock',
   'pumpkin', 'snowman', 'castle', 'whale', 'lion', 'tiger', 'penguin', 'mountain', 'umbrella', 'balloon',
-  'poop'
+  'poop',
+  // harder / newer
+  'volcano', 'dinosaur', 'helicopter', 'octopus', 'treasure chest', 'wizard', 'mermaid', 'lighthouse',
+  'telescope', 'sandcastle', 'waterfall', 'skateboard', 'astronaut', 'campfire', 'jellyfish', 'windmill',
+  'scarecrow', 'snowflake', 'cactus', 'igloo', 'tornado', 'submarine', 'fireworks', 'hammock', 'dragonfly',
+  'pineapple', 'roller coaster', 'hot air balloon', 'ferris wheel', 'drone', 'headphones', 'game controller',
+  'lightning', 'cheeseburger', 'traffic light', 'vending machine', 'flamingo', 'chameleon', 'hedgehog',
+  'narwhal', 'sloth', 'wind turbine', 'lawn mower', 'paper airplane', 'shooting star', 'maze', 'anchor',
+  'compass', 'pretzel', 'cupcake', 'trophy', 'magnet', 'bandage', 'birthday cake', 'spaceship',
 ];
 
 function pickWord(exclude?: string): string {
@@ -25,7 +35,11 @@ function pickWord(exclude?: string): string {
   return word;
 }
 
-export function createDrawGuess(playerIds: string[], firstDrawerId: string): DrawGuessState {
+export function createDrawGuess(
+  playerIds: string[],
+  firstDrawerId: string,
+  options?: GameOptions,
+): DrawGuessState {
   const seating = [...playerIds];
   // Start the drawer rotation at the chosen first player.
   const startIdx = Math.max(0, seating.indexOf(firstDrawerId));
@@ -33,12 +47,13 @@ export function createDrawGuess(playerIds: string[], firstDrawerId: string): Dra
   const scores: Record<string, number> = {};
   for (const id of seating) scores[id] = 0;
 
+  const roundsPerPlayer = Math.min(MAX_ROUNDS_PER_PLAYER, Math.max(1, Math.round(options?.rounds ?? 1)));
   const word = pickWord();
   return {
     kind: 'drawguess',
     seating: rotated,
     round: 0,
-    totalRounds: rotated.length,
+    totalRounds: rotated.length * roundsPerPlayer,
     drawerId: rotated[0],
     phase: 'drawing',
     word,
@@ -126,7 +141,14 @@ function advanceRound(state: DrawGuessState): void {
     return;
   }
   state.round = nextRound;
-  state.drawerId = state.seating[nextRound];
+  // Next drawer relative to the current one (so removals don't break rotation).
+  const i = state.seating.indexOf(state.drawerId);
+  beginRound(state, state.seating[(i + 1) % state.seating.length]);
+}
+
+/** Set up a fresh drawing round for the given drawer (new word, clean canvas). */
+function beginRound(state: DrawGuessState, drawerId: string): void {
+  state.drawerId = drawerId;
   state.phase = 'drawing';
   state.secondsLeft = ROUND_SECONDS;
   state.strokes = [];
@@ -135,6 +157,32 @@ function advanceRound(state: DrawGuessState): void {
   const word = pickWord(state.word);
   state.word = word;
   state.wordLength = word.replace(/ /g, '').length;
+}
+
+/** Drop a player mid-game; returns null if too few remain to keep playing. */
+export function removeDrawGuessPlayer(state: DrawGuessState, id: string): DrawGuessState | null {
+  if (!state.seating.includes(id)) return state;
+  const oldSeating = state.seating;
+  const oldIdx = oldSeating.indexOf(id);
+  const seating = oldSeating.filter((s) => s !== id);
+  if (seating.length < 2) return null; // need a drawer + at least one guesser
+
+  const next: DrawGuessState = structuredClone(state);
+  next.seating = seating;
+  delete next.scores[id];
+  next.guessed = next.guessed.filter((g) => g !== id);
+
+  if (state.drawerId === id) {
+    // The drawer left — hand the round to whoever followed them and redraw.
+    beginRound(next, oldSeating[(oldIdx + 1) % oldSeating.length]);
+  } else if (next.phase === 'drawing') {
+    // A guesser left — the round may now be fully guessed.
+    const guessers = next.seating.filter((g) => g !== next.drawerId);
+    if (guessers.length > 0 && guessers.every((g) => next.guessed.includes(g))) {
+      endRound(next);
+    }
+  }
+  return next;
 }
 
 

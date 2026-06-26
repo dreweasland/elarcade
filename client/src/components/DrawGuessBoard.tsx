@@ -50,14 +50,16 @@ export function DrawGuessBoard({
   const haveGuessed = game.guessed.includes(youId);
   const canGuess = canPlay && !isDrawer && drawing && !haveGuessed;
 
-  // Repaint the whole canvas when the round changes (also on mount / reconnect).
+  // Repaint the whole canvas when a new round/turn starts (also on mount /
+  // reconnect). Keyed on drawerId too, so a mid-round drawer change (when the
+  // drawer leaves) clears the previous drawing even though `round` is unchanged.
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, SIZE, SIZE);
     for (const s of game.strokes) paintStroke(ctx, s);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [game.round, game.phase === 'drawing']);
+  }, [game.round, game.drawerId, game.phase === 'drawing']);
 
   // Apply live relayed strokes from the drawer.
   useEffect(() => {

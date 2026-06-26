@@ -29,8 +29,10 @@ non-obvious things that bite when extending the codebase.
     Driven on a ~1s timer; chains for push-your-luck/multi-bot turns. (`server/src/games/bots.ts`)
   - **`removePlayer(state, playerId)`** — drop a player mid-game so 3-4 player games keep
     going; return the new state, or `null` if too few remain (the room ends the round).
-    Built on the `removeSeat` helper (`server/src/games/seating.ts`). Omit for 2-player and
-    round-structured games (Telephone/Fishbowl/Draw & Guess), which end the round on a leave.
+    Built on the `removeSeat` helper (`server/src/games/seating.ts`). Implemented for the
+    turn-based multiplayer games incl. Draw & Guess (whose drawer-relative rotation tolerates
+    a mid-game leave). Omit for 2-player games and Telephone/Fishbowl (fixed-roster
+    album/team rotation can't drop a player cleanly), which end the round on a leave.
 
 ## Gotchas the README glosses over
 
