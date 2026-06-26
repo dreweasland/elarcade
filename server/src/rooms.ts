@@ -470,12 +470,24 @@ export class RoomManager {
       room.players = room.players.filter((p) => p.id !== meta.playerId);
       delete room.scores[meta.playerId];
       room.rematchReady.delete(meta.playerId);
-      // If a game was underway, end the round — the opponent is alone.
-      if (room.status === 'playing') {
-        room.status = 'waiting';
-        room.gameState = null;
-        this.stopGameTimer(room);
-        this.stopBots(room);
+      // If a game was underway, try to drop just this player so the rest keep
+      // playing (3-4 player games). If the game can't continue without them
+      // (2-player games, or it drops below minPlayers), end the round.
+      if (room.status === 'playing' && room.gameState) {
+        const mod = GAME_MODULES[room.game];
+        const continued = mod.removePlayer
+          ? mod.removePlayer(room.gameState, meta.playerId)
+          : null;
+        if (continued) {
+          room.gameState = continued;
+          this.settleResult(room);
+          this.scheduleBots(room); // the new current player may be a CPU
+        } else {
+          room.status = 'waiting';
+          room.gameState = null;
+          this.stopGameTimer(room);
+          this.stopBots(room);
+        }
       }
       // A lone human left with only bots behind — clear the bots out too.
       if (room.players.every((p) => p.isBot)) {

@@ -20,11 +20,17 @@ non-obvious things that bite when extending the codebase.
   import extensions even from `.ts`** (NodeNext/ESM); follow that or imports break.
 - The room engine (`server/src/rooms.ts`) is fully game-agnostic and drives every game
   through `GAME_MODULES` (`server/src/games/index.ts`). You almost never edit `rooms.ts`.
-- A `GameModule` has `createState` + `applyMove`, plus two optional hooks:
+- A `GameModule` has `createState` + `applyMove`, plus optional hooks:
   - **`viewFor(state, viewerId)`** — per-viewer redaction for hidden info (viewerId is
     `null` for spectators). Used by Battleship, UNO, Memory, Draw & Guess, Telephone.
   - **`tick(state)`** — server clock called ~1×/sec while `status==='playing'`; return
     `changed:true` to broadcast. Used by timed games (Draw & Guess, Telephone).
+  - **`botMove(state, botId)`** — CPU opponent; return the move to make now or `null`.
+    Driven on a ~1s timer; chains for push-your-luck/multi-bot turns. (`server/src/games/bots.ts`)
+  - **`removePlayer(state, playerId)`** — drop a player mid-game so 3-4 player games keep
+    going; return the new state, or `null` if too few remain (the room ends the round).
+    Built on the `removeSeat` helper (`server/src/games/seating.ts`). Omit for 2-player and
+    round-structured games (Telephone/Fishbowl/Draw & Guess), which end the round on a leave.
 
 ## Gotchas the README glosses over
 

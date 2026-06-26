@@ -1,4 +1,5 @@
 import { GameOptions, PigMove, PigState } from '../../../shared/protocol.js';
+import { removeSeat } from './seating.js';
 
 const TARGET = 100;
 
@@ -86,4 +87,22 @@ export function applyPigMove(state: PigState, playerId: string, move: PigMove): 
 function nextPlayer(state: PigState, fromId: string): string {
   const idx = state.seating.indexOf(fromId);
   return state.seating[(idx + 1) % state.seating.length];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removePigPlayer(state: PigState, id: string): PigState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: PigState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.scores[id];
+  if (seat.wasTurn) {
+    next.turnTotal = 0;
+    next.lastRoll = null;
+    next.lastRoller = null;
+    next.busted = false;
+    next.wipedOut = false;
+  }
+  next.turn = seat.turn;
+  return next;
 }

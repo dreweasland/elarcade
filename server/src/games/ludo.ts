@@ -8,6 +8,7 @@ import {
   LudoMove,
   LudoState,
 } from '../../../shared/protocol.js';
+import { removeSeat } from './seating.js';
 
 /** Which colours play, by seat count — 2 players sit opposite for fairness. */
 const COLOR_LAYOUT: Record<number, LudoColor[]> = {
@@ -158,4 +159,23 @@ function endTurn(state: LudoState, d: number, playerId: string, moved: boolean):
   }
   const idx = state.seating.indexOf(playerId);
   state.turn = state.seating[(idx + 1) % state.seating.length];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeLudoPlayer(state: LudoState, id: string): LudoState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: LudoState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.colors[id];
+  delete next.tokens[id];
+  if (seat.wasTurn) {
+    next.phase = 'rolling';
+    next.dice = null;
+    next.movable = [];
+    next.lastRollNoMove = false;
+    next.lastBump = null;
+  }
+  next.turn = seat.turn;
+  return next;
 }

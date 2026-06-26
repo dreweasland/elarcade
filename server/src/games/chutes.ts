@@ -1,4 +1,5 @@
 import { CHUTES_BOARD, ChutesMove, ChutesState } from '../../../shared/protocol.js';
+import { removeSeat } from './seating.js';
 
 export function createChutes(playerIds: string[], firstPlayerId: string): ChutesState {
   const positions: Record<string, number> = {};
@@ -65,4 +66,21 @@ export function applyChutesMove(state: ChutesState, playerId: string, move: Chut
 function nextPlayer(state: ChutesState, fromId: string): string {
   const idx = state.seating.indexOf(fromId);
   return state.seating[(idx + 1) % state.seating.length];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeChutesPlayer(state: ChutesState, id: string): ChutesState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: ChutesState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.positions[id];
+  next.turn = seat.turn;
+  if (seat.wasTurn) {
+    next.lastRoll = null;
+    next.lastFrom = null;
+    next.lastVia = null;
+    next.lastMover = null;
+  }
+  return next;
 }

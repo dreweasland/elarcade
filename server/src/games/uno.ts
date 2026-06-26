@@ -1,4 +1,5 @@
 import { UnoCard, UnoColor, UnoMove, UnoState } from '../../../shared/protocol.js';
+import { removeSeat } from './seating.js';
 
 const COLORS: UnoColor[] = ['red', 'yellow', 'green', 'blue'];
 
@@ -213,6 +214,18 @@ function neighbor(state: UnoState, fromId: string, steps: number): string {
   const idx = state.seating.indexOf(fromId);
   const next = (((idx + state.direction * steps) % n) + n) % n;
   return state.seating[next];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeUnoPlayer(state: UnoState, id: string): UnoState | null {
+  const seat = removeSeat(state.seating, state.turn, id, state.direction);
+  if (!seat) return null;
+  const next: UnoState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.hands[id]; // their cards leave the game
+  if (next.pendingPlay?.player === id) next.pendingPlay = null;
+  next.turn = seat.turn;
+  return next;
 }
 
 /** Move the turn `steps` seats from `fromId` in the current direction. */

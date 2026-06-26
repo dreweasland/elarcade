@@ -1,4 +1,5 @@
 import { CANTSTOP_HEIGHTS, CantStopMove, CantStopState } from '../../../shared/protocol.js';
+import { removeSeat } from './seating.js';
 
 const CLAIMS_TO_WIN = 3;
 const MAX_RUNNERS = 3;
@@ -171,4 +172,27 @@ function startTurn(state: CantStopState, playerId: string): void {
 function nextPlayer(state: CantStopState, fromId: string): string {
   const idx = state.seating.indexOf(fromId);
   return state.seating[(idx + 1) % state.seating.length];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeCantStopPlayer(state: CantStopState, id: string): CantStopState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: CantStopState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.progress[id];
+  // Free any columns they had claimed (would otherwise render a ghost owner).
+  for (const col of Object.keys(next.claimed)) {
+    if (next.claimed[Number(col)] === id) delete next.claimed[Number(col)];
+  }
+  if (seat.wasTurn) {
+    // Their turn ends — discard their runners and start the next player fresh.
+    next.runners = {};
+    next.dice = null;
+    next.options = null;
+    next.phase = 'rolling';
+    next.busted = false;
+  }
+  next.turn = seat.turn;
+  return next;
 }

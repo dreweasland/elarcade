@@ -2,21 +2,21 @@ import { GameId, GameMove, GameOptions, GameState } from '../../../shared/protoc
 import { applyTicTacToeMove, createTicTacToe } from './ticTacToe.js';
 import { applyConnectFourMove, createConnectFour } from './connectFour.js';
 import { applyBattleshipMove, createBattleship, viewBattleship } from './battleship.js';
-import { applyUnoMove, createUno, viewUno } from './uno.js';
-import { applyMemoryMove, createMemory, viewMemory } from './memory.js';
-import { applyPigMove, createPig } from './pig.js';
-import { applyDotsMove, createDots } from './dots.js';
+import { applyUnoMove, createUno, removeUnoPlayer, viewUno } from './uno.js';
+import { applyMemoryMove, createMemory, removeMemoryPlayer, viewMemory } from './memory.js';
+import { applyPigMove, createPig, removePigPlayer } from './pig.js';
+import { applyDotsMove, createDots, removeDotsPlayer } from './dots.js';
 import { applyDrawGuessMove, createDrawGuess, tickDrawGuess, viewDrawGuess } from './drawguess.js';
-import { applyZombieMove, createZombie, viewZombie } from './zombie.js';
-import { applyChutesMove, createChutes } from './chutes.js';
-import { applyCantStopMove, createCantStop } from './cantstop.js';
+import { applyZombieMove, createZombie, removeZombiePlayer, viewZombie } from './zombie.js';
+import { applyChutesMove, createChutes, removeChutesPlayer } from './chutes.js';
+import { applyCantStopMove, createCantStop, removeCantStopPlayer } from './cantstop.js';
 import { applyTelephoneMove, createTelephone, tickTelephone, viewTelephone } from './telephone.js';
 import { applyFishbowlMove, createFishbowl, tickFishbowl, viewFishbowl } from './fishbowl.js';
 import { applyGoFishMove, createGoFish, viewGoFish } from './gofish.js';
 import { applyOldMaidMove, createOldMaid, viewOldMaid } from './oldmaid.js';
 import { applyRpsMove, createRps, viewRps } from './rps.js';
 import { applyCheckersMove, createCheckers } from './checkers.js';
-import { applyLudoMove, createLudo } from './ludo.js';
+import { applyLudoMove, createLudo, removeLudoPlayer } from './ludo.js';
 import {
   botCheckers,
   botChutes,
@@ -56,6 +56,13 @@ export interface GameModule {
    * this on a timer so CPU moves feel natural. Omit for games without a bot.
    */
   botMove?(state: GameState, botId: string): GameMove | null;
+  /**
+   * Optional mid-game player removal (for games that seat 3+). Returns the
+   * state with the player removed so the rest keep playing, or null if too few
+   * remain to continue (the room then ends the round). Omit for games whose
+   * structure can't drop a player cleanly (they end the round on a leave).
+   */
+  removePlayer?(state: GameState, playerId: string): GameState | null;
 }
 
 export const GAME_MODULES: Record<GameId, GameModule> = {
@@ -81,20 +88,24 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createUno(ids, first),
     applyMove: (state, playerId, move) => applyUnoMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewUno(state as any, viewerId),
+    removePlayer: (state, id) => removeUnoPlayer(state as any, id),
   },
   memory: {
     createState: (ids, first, options) => createMemory(ids, first, options),
     applyMove: (state, playerId, move) => applyMemoryMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewMemory(state as any, viewerId),
+    removePlayer: (state, id) => removeMemoryPlayer(state as any, id),
   },
   pig: {
     createState: (ids, first, options) => createPig(ids, first, options),
     applyMove: (state, playerId, move) => applyPigMove(state as any, playerId, move as any),
     botMove: (state, botId) => botPig(state as any, botId),
+    removePlayer: (state, id) => removePigPlayer(state as any, id),
   },
   dots: {
     createState: (ids, first, options) => createDots(ids, first, options),
     applyMove: (state, playerId, move) => applyDotsMove(state as any, playerId, move as any),
+    removePlayer: (state, id) => removeDotsPlayer(state as any, id),
   },
   drawguess: {
     createState: (ids, first) => createDrawGuess(ids, first),
@@ -106,15 +117,18 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createZombie(ids, first),
     applyMove: (state, playerId, move) => applyZombieMove(state as any, playerId, move as any),
     viewFor: (state, viewerId) => viewZombie(state as any, viewerId),
+    removePlayer: (state, id) => removeZombiePlayer(state as any, id),
   },
   chutes: {
     createState: (ids, first) => createChutes(ids, first),
     applyMove: (state, playerId, move) => applyChutesMove(state as any, playerId, move as any),
     botMove: (state, botId) => botChutes(state as any, botId),
+    removePlayer: (state, id) => removeChutesPlayer(state as any, id),
   },
   cantstop: {
     createState: (ids, first) => createCantStop(ids, first),
     applyMove: (state, playerId, move) => applyCantStopMove(state as any, playerId, move as any),
+    removePlayer: (state, id) => removeCantStopPlayer(state as any, id),
   },
   telephone: {
     createState: (ids) => createTelephone(ids),
@@ -155,5 +169,6 @@ export const GAME_MODULES: Record<GameId, GameModule> = {
     createState: (ids, first) => createLudo(ids, first),
     applyMove: (state, playerId, move) => applyLudoMove(state as any, playerId, move as any),
     botMove: (state, botId) => botLudo(state as any, botId),
+    removePlayer: (state, id) => removeLudoPlayer(state as any, id),
   },
 };

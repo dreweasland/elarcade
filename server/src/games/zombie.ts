@@ -1,4 +1,5 @@
 import { ZombieColor, ZombieDie, ZombieFace, ZombieMove, ZombieState } from '../../../shared/protocol.js';
+import { removeSeat } from './seating.js';
 
 const TARGET = 13; // brains to win
 const HAND = 3; // dice rolled at once
@@ -138,6 +139,21 @@ function startTurn(state: ZombieState, playerId: string): void {
 function nextPlayer(state: ZombieState, fromId: string): string {
   const idx = state.seating.indexOf(fromId);
   return state.seating[(idx + 1) % state.seating.length];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeZombiePlayer(state: ZombieState, id: string): ZombieState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: ZombieState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.scores[id];
+  if (seat.wasTurn && seat.turn) {
+    startTurn(next, seat.turn); // fresh cup/brains/shotguns for the next player
+  } else {
+    next.turn = seat.turn;
+  }
+  return next;
 }
 
 /** Hide the cup contents (and reshuffle bookkeeping) from clients. */

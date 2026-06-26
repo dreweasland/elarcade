@@ -1,5 +1,6 @@
 import { DotsMove, DotsState, GameOptions } from '../../../shared/protocol.js';
 import { highestScorer } from './score.js';
+import { removeSeat } from './seating.js';
 
 const SIZES: Record<NonNullable<GameOptions['size']>, { rows: number; cols: number }> = {
   small: { rows: 3, cols: 3 },
@@ -113,5 +114,18 @@ function boxComplete(state: DotsState, br: number, bc: number): boolean {
 function nextPlayer(state: DotsState, fromId: string): string {
   const idx = state.seating.indexOf(fromId);
   return state.seating[(idx + 1) % state.seating.length];
+}
+
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeDotsPlayer(state: DotsState, id: string): DotsState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: DotsState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.scores[id];
+  // Free the boxes they claimed (otherwise they'd render as a ghost owner).
+  next.owners = next.owners.map((o) => (o === id ? null : o));
+  next.turn = seat.turn;
+  return next;
 }
 

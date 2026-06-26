@@ -1,5 +1,6 @@
 import { GameOptions, MemoryCard, MemoryMove, MemoryState } from '../../../shared/protocol.js';
 import { highestScorer } from './score.js';
+import { removeSeat } from './seating.js';
 
 // A pool of distinct, kid-friendly faces — needs >= 18 for the large board.
 const FACES = [
@@ -126,6 +127,21 @@ function nextPlayer(state: MemoryState, fromId: string): string {
 /** Most pairs wins; a tie for the lead is a draw. */
 
 /** Hide the faces of cards that aren't currently face-up or matched. */
+/** Drop a player mid-game; returns null if too few remain to continue. */
+export function removeMemoryPlayer(state: MemoryState, id: string): MemoryState | null {
+  const seat = removeSeat(state.seating, state.turn, id);
+  if (!seat) return null;
+  const next: MemoryState = structuredClone(state);
+  next.seating = seat.seating;
+  delete next.scores[id];
+  if (seat.wasTurn) {
+    next.flipped = []; // discard their leftover flip
+    next.lastResult = null;
+  }
+  next.turn = seat.turn;
+  return next;
+}
+
 export function viewMemory(state: MemoryState, _viewerId: string | null): MemoryState {
   const view: MemoryState = structuredClone(state);
   view.cards = view.cards.map((card, idx) => {
