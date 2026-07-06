@@ -211,11 +211,12 @@ export function addStroke(
   if (state.phase !== 'drawing') return null;
   if (state.strokes.length >= MAX_STROKES) return null;
   if (!segment || !Array.isArray(segment.points) || segment.points.length < 2) return null;
-  const clean = {
+  const clean: DrawGuessState['strokes'][number] = {
     color: String(segment.color || '#fff').slice(0, 12),
     width: Math.max(1, Math.min(40, Number(segment.width) || 4)),
     points: segment.points.slice(0, 512).map((n) => Math.round(n)),
   };
+  if (segment.erase === true) clean.erase = true;
   state.strokes.push(clean);
   return clean;
 }

@@ -2,24 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { DrawGuessState, DrawStroke, PublicPlayer } from '../../../shared/protocol.ts';
 import { arcade } from '../arcade.ts';
 import { AvatarIcon } from './AvatarIcon.tsx';
+import { paintStroke, SIZE, toBuf } from './drawing.ts';
 
 const COLORS = ['#f3eaff', '#111018', '#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d', '#ff8c1a'];
 const WIDTHS = [4, 10, 20];
-const SIZE = 1000; // canvas buffer is SIZE×SIZE; points are normalized to it
-
-function paintStroke(ctx: CanvasRenderingContext2D, s: DrawStroke) {
-  const p = s.points;
-  if (!p || p.length < 2) return;
-  ctx.strokeStyle = s.color;
-  ctx.lineWidth = s.width;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(p[0], p[1]);
-  if (p.length === 2) ctx.lineTo(p[0] + 0.1, p[1] + 0.1);
-  for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
-  ctx.stroke();
-}
 
 export function DrawGuessBoard({
   game,
@@ -41,6 +27,7 @@ export function DrawGuessBoard({
   const lastSentRef = useRef(0);
   const [color, setColor] = useState(COLORS[3]);
   const [width, setWidth] = useState(WIDTHS[1]);
+  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
   const [guess, setGuess] = useState('');
 
   const playerById = (id: string) => players.find((p) => p.id === id);
@@ -71,18 +58,14 @@ export function DrawGuessBoard({
     });
   }, []);
 
-  function toBuf(e: React.PointerEvent): [number, number] {
-    const c = canvasRef.current!;
-    const r = c.getBoundingClientRect();
-    const x = Math.max(0, Math.min(SIZE, ((e.clientX - r.left) / r.width) * SIZE));
-    const y = Math.max(0, Math.min(SIZE, ((e.clientY - r.top) / r.height) * SIZE));
-    return [Math.round(x), Math.round(y)];
+  function makeStroke(points: number[]): DrawStroke {
+    return tool === 'eraser' ? { color, width, points, erase: true } : { color, width, points };
   }
 
   function flush(end: boolean) {
     const acc = accRef.current;
     if (acc.length >= 4) {
-      arcade.sendDraw({ color, width, points: acc.slice() });
+      arcade.sendDraw(makeStroke(acc.slice()));
       accRef.current = end ? [] : acc.slice(-2);
       lastSentRef.current = performance.now();
     } else if (end) {
@@ -96,12 +79,12 @@ export function DrawGuessBoard({
     canvasRef.current?.setPointerCapture(e.pointerId);
     drawingRef.current = true;
     movedRef.current = false;
-    accRef.current = toBuf(e);
+    accRef.current = toBuf(canvasRef.current!, e);
     lastSentRef.current = performance.now();
   }
   function onMove(e: React.PointerEvent) {
     if (!canDraw || !drawingRef.current) return;
-    const [x, y] = toBuf(e);
+    const [x, y] = toBuf(canvasRef.current!, e);
     const acc = accRef.current;
     const lx = acc[acc.length - 2];
     const ly = acc[acc.length - 1];
@@ -109,7 +92,7 @@ export function DrawGuessBoard({
     movedRef.current = true;
     acc.push(x, y);
     const ctx = canvasRef.current?.getContext('2d');
-    if (ctx) paintStroke(ctx, { color, width, points: [lx, ly, x, y] });
+    if (ctx) paintStroke(ctx, makeStroke([lx, ly, x, y]));
     if (performance.now() - lastSentRef.current > 50 || acc.length > 40) flush(false);
   }
   function onUp() {
@@ -120,8 +103,8 @@ export function DrawGuessBoard({
     if (!movedRef.current) {
       const [x, y] = [accRef.current[0], accRef.current[1]];
       const ctx = canvasRef.current?.getContext('2d');
-      if (ctx) paintStroke(ctx, { color, width, points: [x, y] });
-      arcade.sendDraw({ color, width, points: [x, y] });
+      if (ctx) paintStroke(ctx, makeStroke([x, y]));
+      arcade.sendDraw(makeStroke([x, y]));
       accRef.current = [];
       return;
     }
@@ -184,6 +167,7 @@ export function DrawGuessBoard({
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerLeave={onUp}
+          onContextMenu={(e) => e.preventDefault()}
         />
       </div>
 
@@ -193,9 +177,12 @@ export function DrawGuessBoard({
             {COLORS.map((c) => (
               <button
                 key={c}
-                className={`dg-swatch ${c === color ? 'sel' : ''}`}
+                className={`dg-swatch ${c === color && tool === 'pen' ? 'sel' : ''}`}
                 style={{ background: c }}
-                onClick={() => setColor(c)}
+                onClick={() => {
+                  setColor(c);
+                  setTool('pen');
+                }}
                 aria-label={`color ${c}`}
               />
             ))}
@@ -207,6 +194,14 @@ export function DrawGuessBoard({
               </button>
             ))}
           </div>
+          <button
+            className={`dg-tool ${tool === 'eraser' ? 'sel' : ''}`}
+            onClick={() => setTool((t) => (t === 'eraser' ? 'pen' : 'eraser'))}
+            aria-label="eraser"
+            title="Eraser"
+          >
+            🧽
+          </button>
           <button className="btn ghost small" onClick={clearCanvas}>
             Clear
           </button>

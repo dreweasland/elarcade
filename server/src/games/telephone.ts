@@ -184,11 +184,13 @@ function sanitizeStrokes(strokes: DrawStroke[] | undefined): DrawStroke[] {
   const out: DrawStroke[] = [];
   for (const s of strokes) {
     if (!s || !Array.isArray(s.points) || s.points.length < 2) continue;
-    out.push({
+    const clean: DrawStroke = {
       color: String(s.color || '#fff').slice(0, 12),
       width: Math.max(1, Math.min(40, Number(s.width) || 4)),
       points: s.points.slice(0, MAX_POINTS).map((nn) => Math.round(nn)),
-    });
+    };
+    if (s.erase === true) clean.erase = true;
+    out.push(clean);
     if (out.length >= MAX_STROKES) break;
   }
   return out;

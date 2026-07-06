@@ -589,6 +589,9 @@ export type DotsMove = { action: 'edge'; edge: 'h' | 'v'; r: number; c: number }
 export interface DrawStroke {
   color: string;
   width: number;
+  /** True for eraser strokes — painted with 'destination-out' so they punch
+   *  through to the canvas background instead of drawing over it. */
+  erase?: boolean;
   points: number[];
 }
 

@@ -1,24 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { DrawStroke, PublicPlayer, TelephoneState } from '../../../shared/protocol.ts';
 import { AvatarIcon } from './AvatarIcon.tsx';
+import { chunkPoints, paintStroke, SIZE, toBuf } from './drawing.ts';
 
 const COLORS = ['#111018', '#ff3db5', '#19e6ff', '#4dffa6', '#ffe14d', '#ff8c1a', '#7b61ff'];
 const WIDTHS = [4, 10, 20];
-const SIZE = 1000; // canvas buffer is SIZE×SIZE; points normalized to it
-
-function paintStroke(ctx: CanvasRenderingContext2D, s: DrawStroke) {
-  const p = s.points;
-  if (!p || p.length < 2) return;
-  ctx.strokeStyle = s.color;
-  ctx.lineWidth = s.width;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.beginPath();
-  ctx.moveTo(p[0], p[1]);
-  if (p.length === 2) ctx.lineTo(p[0] + 0.1, p[1] + 0.1);
-  for (let i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
-  ctx.stroke();
-}
 
 /** Read-only rendering of a finished drawing. */
 function Sketch({ strokes, className }: { strokes: DrawStroke[]; className?: string }) {
@@ -61,65 +47,115 @@ export function TelephoneBoard({
 
   // ----- interactive drawing canvas -----
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const strokesRef = useRef<DrawStroke[]>([]);
+  // One entry per pen/eraser gesture; a long gesture may span several
+  // protocol strokes (the server caps points per stroke), so undo works on
+  // whole gestures and submit flattens.
+  const strokesRef = useRef<DrawStroke[][]>([]);
+  const clearedRef = useRef<DrawStroke[][] | null>(null); // undo target after Clear
   const drawingRef = useRef(false);
   const ptsRef = useRef<number[]>([]);
+  const autoSentRef = useRef(false);
   const [color, setColor] = useState(COLORS[0]);
   const [width, setWidth] = useState(WIDTHS[1]);
+  const [tool, setTool] = useState<'pen' | 'eraser'>('pen');
   const [strokeCount, setStrokeCount] = useState(0);
   const [text, setText] = useState('');
 
   // Reset the drafting surface whenever the round/phase changes.
   useEffect(() => {
     strokesRef.current = [];
+    clearedRef.current = null;
     ptsRef.current = [];
+    drawingRef.current = false;
+    autoSentRef.current = false;
     setStrokeCount(0);
     setText('');
+    setTool('pen');
     const ctx = canvasRef.current?.getContext('2d');
     if (ctx) ctx.clearRect(0, 0, SIZE, SIZE);
   }, [game.round, game.phase]);
 
-  function toBuf(e: React.PointerEvent): [number, number] {
-    const c = canvasRef.current!;
-    const r = c.getBoundingClientRect();
-    const x = Math.max(0, Math.min(SIZE, ((e.clientX - r.left) / r.width) * SIZE));
-    const y = Math.max(0, Math.min(SIZE, ((e.clientY - r.top) / r.height) * SIZE));
-    return [Math.round(x), Math.round(y)];
+  // Beat the buzzer: when the clock is about to run out, submit whatever is
+  // on the canvas / in the input — otherwise the server files a blank page
+  // and the work is lost.
+  useEffect(() => {
+    if (game.secondsLeft > 1 || autoSentRef.current) return;
+    if (!canPlay || !inGame || youSubmitted) return;
+    if (game.phase === 'drawing') {
+      const strokes = strokesRef.current.flat();
+      if (drawingRef.current && ptsRef.current.length >= 2) {
+        strokes.push(...chunkPoints(ptsRef.current).map(makeStroke)); // mid-gesture counts too
+      }
+      if (strokes.length > 0) {
+        autoSentRef.current = true;
+        onSubmitDrawing(strokes);
+      }
+    } else if (game.phase === 'writing') {
+      const t = text.trim();
+      if (t) {
+        autoSentRef.current = true;
+        onSubmitText(t);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game.secondsLeft]);
+
+  function makeStroke(points: number[]): DrawStroke {
+    return tool === 'eraser' ? { color, width, points, erase: true } : { color, width, points };
   }
   function onDown(e: React.PointerEvent) {
     e.preventDefault();
     canvasRef.current?.setPointerCapture(e.pointerId);
     drawingRef.current = true;
-    ptsRef.current = toBuf(e);
+    ptsRef.current = toBuf(canvasRef.current!, e);
   }
   function onMove(e: React.PointerEvent) {
     if (!drawingRef.current) return;
-    const [x, y] = toBuf(e);
+    const [x, y] = toBuf(canvasRef.current!, e);
     const acc = ptsRef.current;
     const lx = acc[acc.length - 2];
     const ly = acc[acc.length - 1];
-    if (x === lx && y === ly) return;
+    const dx = x - lx;
+    const dy = y - ly;
+    if (dx * dx + dy * dy < 9) return; // thin sub-pixel jitter (~1px on screen)
     acc.push(x, y);
     const ctx = canvasRef.current?.getContext('2d');
-    if (ctx) paintStroke(ctx, { color, width, points: [lx, ly, x, y] });
+    if (ctx) paintStroke(ctx, makeStroke([lx, ly, x, y]));
   }
   function onUp() {
     if (!drawingRef.current) return;
     drawingRef.current = false;
     const pts = ptsRef.current;
-    if (pts.length >= 2) {
-      strokesRef.current.push({ color, width, points: pts.slice() });
-      setStrokeCount(strokesRef.current.length);
-      // A tap (single point) is never painted by onMove — draw the dot now so
-      // the artist sees it, matching what gets submitted.
-      if (pts.length === 2) {
-        const ctx = canvasRef.current?.getContext('2d');
-        if (ctx) paintStroke(ctx, { color, width, points: [pts[0], pts[1]] });
-      }
-    }
     ptsRef.current = [];
+    if (pts.length < 2) return;
+    strokesRef.current.push(chunkPoints(pts).map(makeStroke));
+    setStrokeCount(strokesRef.current.length);
+    // A tap (single point) is never painted by onMove — draw the dot now so
+    // the artist sees it, matching what gets submitted.
+    if (pts.length === 2) {
+      const ctx = canvasRef.current?.getContext('2d');
+      if (ctx) paintStroke(ctx, makeStroke([pts[0], pts[1]]));
+    }
+  }
+  function repaint() {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, SIZE, SIZE);
+    for (const gesture of strokesRef.current) for (const s of gesture) paintStroke(ctx, s);
+  }
+  function undo() {
+    if (strokesRef.current.length > 0) {
+      strokesRef.current.pop();
+    } else if (clearedRef.current) {
+      strokesRef.current = clearedRef.current; // Clear is undoable too
+      clearedRef.current = null;
+    }
+    setStrokeCount(strokesRef.current.length);
+    repaint();
   }
   function clearCanvas() {
+    if (strokesRef.current.length === 0) return;
+    clearedRef.current = strokesRef.current;
     strokesRef.current = [];
     setStrokeCount(0);
     const ctx = canvasRef.current?.getContext('2d');
@@ -286,6 +322,7 @@ export function TelephoneBoard({
           onPointerMove={onMove}
           onPointerUp={onUp}
           onPointerLeave={onUp}
+          onContextMenu={(e) => e.preventDefault()}
         />
       </div>
       <div className="dg-tools">
@@ -293,9 +330,12 @@ export function TelephoneBoard({
           {COLORS.map((c) => (
             <button
               key={c}
-              className={`dg-swatch ${c === color ? 'sel' : ''}`}
+              className={`dg-swatch ${c === color && tool === 'pen' ? 'sel' : ''}`}
               style={{ background: c }}
-              onClick={() => setColor(c)}
+              onClick={() => {
+                setColor(c);
+                setTool('pen');
+              }}
               aria-label={`color ${c}`}
             />
           ))}
@@ -307,14 +347,29 @@ export function TelephoneBoard({
             </button>
           ))}
         </div>
-        <button className="btn ghost small" onClick={clearCanvas}>
+        <button
+          className={`dg-tool ${tool === 'eraser' ? 'sel' : ''}`}
+          onClick={() => setTool((t) => (t === 'eraser' ? 'pen' : 'eraser'))}
+          aria-label="eraser"
+          title="Eraser"
+        >
+          🧽
+        </button>
+        <button
+          className="btn ghost small"
+          onClick={undo}
+          disabled={strokeCount === 0 && !clearedRef.current}
+        >
+          ↩ Undo
+        </button>
+        <button className="btn ghost small" onClick={clearCanvas} disabled={strokeCount === 0}>
           Clear
         </button>
       </div>
       <button
         className="btn primary big"
         disabled={strokeCount === 0}
-        onClick={() => onSubmitDrawing(strokesRef.current.slice())}
+        onClick={() => onSubmitDrawing(strokesRef.current.flat())}
       >
         Send drawing ▶
       </button>
